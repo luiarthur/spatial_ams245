@@ -3,35 +3,38 @@
 # slides. Take the variance to be 1, and take the range parameter to be such
 # that the correlation is .05 at a distance of one unit
 
+source("cov_fn.R")
 
-semi_variogram <- function(cov_fn) {
-  #' @param cov_fn: covariance functino with
-  #'                parameters cov_fn(distance, range, variance, nu=0)
+### MAIN ###
 
-  function(d, phi, sig2, nu) {
-    cov_fn(0, phi, sig2, nu) - cov_fn(d, phi, sig2, nu)
-  }
-}
+### phi for which corr is 0.05 at distance 1 and variance=1, nu=1 ###
+phi <- lapply(cov_fn, function(x) find_phi(x, r=.05, d=1, nu=1)$root)
+
+### Plot Colors ###
+plot_colors <- c('red', 'blue', 'green', 'pink', 'orange')
 
 
-# List of covariance functions with parameters (distance, range, variance)
-cov_fn <- list(sphere = function(d, phi, sig2=1, nu=0) {
-                 ifelse (d > phi, 
-                         0,
-                         sig2 * (1 - 1.5 * d / phi + .5 * (d / phi) ^ 3))
-               }, 
-               pow_exp = function(d, phi, sig2, nu=1) {
-                 stopifnot(nu > 0 && nu < 2)
-                 sig2 * exp(-abs(d / phi) ^ nu)
-               },
-               rational_quad = function(d, phi, sig2, nu=0) {
-                 sig2 * (phi^2 / (d^2 + phi^2) )
-               }, 
-               wave = function(d, phi, sig2, nu=0) {
-                 x <- d / phi
-                 sig2 * (sin(x) / x)
-               }, 
-               matern = function(d, phi, sig2, nu=0) {
-                 x <- sqrt(2 * nu) * d / phi
-                 sig2  / (2^(nu-1) * gamma(nu)) * x^nu * besselK(x, nu)
-               })
+### Plot Covariance ###
+plot(0, type='n', xlim=c(0,3), ylim=c(-.2,1), fg='grey', bty='n', 
+     xlab='Distance', ylab='Covariance', main='Covariance with respect to Distance')
+
+dummy <- lapply(as.list(1:length(phi)), function(i) {
+  f <- function(x) cov_fn[[i]](x, phi[[i]], sig2=1, nu=1)
+  curve(f, col=plot_colors[i], lwd=3, add=TRUE)
+})
+
+abline(h=.05, v=1, lty=2, col='grey')
+legend("topright", legend=names(phi), bty='n', col=plot_colors, lwd=3)
+
+
+### Plot Variogram ###
+plot(0, type='n', xlim=c(0,3), ylim=c(0,2.1), fg='grey', bty='n', 
+     xlab='Distance', ylab='variogram', main='Variogram')
+
+dummy <- lapply(as.list(1:length(phi)), function(i) {
+  f <- function(x) 2*semi_variogram(cov_fn[[i]])(x, phi[[i]], sig2=1, nu=1)
+  curve(f, col=plot_colors[i], lwd=3, add=TRUE)
+})
+
+legend("bottomright", legend=names(phi), bty='n', col=plot_colors, lwd=3)
+
