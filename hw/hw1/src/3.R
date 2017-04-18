@@ -14,6 +14,8 @@ phi <- lapply(cov_fn, function(x) find_phi(x, r=.05, d=1, nu=1)$root)
 plot_colors <- c('red', 'blue', 'green', 'pink', 'orange')
 
 
+pdf("../img/cov.pdf")
+par(mfrow=c(2,1))
 ### Plot Covariance ###
 plot(0, type='n', xlim=c(0,3), ylim=c(-.2,1), fg='grey', bty='n', 
      xlab='Distance', ylab='Covariance', main='Covariance with respect to Distance')
@@ -27,14 +29,17 @@ abline(h=.05, v=1, lty=2, col='grey')
 legend("topright", legend=names(phi), bty='n', col=plot_colors, lwd=3)
 
 
-### Plot Variogram ###
-plot(0, type='n', xlim=c(0,3), ylim=c(0,2.1), fg='grey', bty='n', 
-     xlab='Distance', ylab='variogram', main='Variogram')
+### Plot Semi-Variogram ###
+plot(0, type='n', xlim=c(0,3), ylim=c(0,1.2), fg='grey', bty='n', 
+     xlab='Distance', ylab='semi-variogram', 
+     main='Semi-variogram with respect to Distance')
 
 dummy <- lapply(as.list(1:length(phi)), function(i) {
-  f <- function(x) 2*semi_variogram(cov_fn[[i]])(x, phi[[i]], sig2=1, nu=1)
+  f <- function(x) semi_variogram(cov_fn[[i]],d_zero=1E-10)(x, phi[[i]], sig2=1, nu=1)
   curve(f, col=plot_colors[i], lwd=3, add=TRUE)
 })
 
+abline(h=1, v=1, lty=2, col='grey')
 legend("bottomright", legend=names(phi), bty='n', col=plot_colors, lwd=3)
-
+par(mfrow=c(2,1))
+dev.off()

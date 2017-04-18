@@ -1,9 +1,9 @@
-semi_variogram <- function(cov_fn) {
+semi_variogram <- function(cov_fn,d_zero=0) {
   #' @param cov_fn: covariance functino with
   #'                parameters cov_fn(distance, range, variance, nu=0)
 
   function(d, phi, sig2, nu) {
-    cov_fn(0, phi, sig2, nu) - cov_fn(d, phi, sig2, nu)
+    cov_fn(d_zero, phi, sig2, nu) - cov_fn(d, phi, sig2, nu)
   }
 }
 
