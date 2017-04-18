@@ -19,11 +19,11 @@ cov_fn <- list(spherical = function(d, phi, sig2=1, nu=0) {
                  sig2 * exp(-abs(d / phi) ^ nu)
                },
                rational_quad = function(d, phi, sig2, nu=0) {
-                 sig2 * (phi^2 / (d^2 + phi^2) )
+                 sig2 * (1 - d^2 / (d^2 + phi^2) )
                }, 
                wave = function(d, phi, sig2, nu=0) {
                  x <- d / phi
-                 sig2 * (sin(x) / x)
+                 sig2 * ifelse(d==0, 1, (sin(x) / x))
                }, 
                matern = function(d, phi, sig2, nu=0) {
                  x <- sqrt(2 * nu) * d / phi
