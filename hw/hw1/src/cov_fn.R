@@ -45,4 +45,8 @@ find_phi <- function(cov_fn, r=.05, d=1, nu=0, mn=1E-10, mx=10) {
 stopifnot( abs( -1 / log(.05) - find_phi(cov_fn$pow_exp, nu=1)$root) < 1E-4 )
 
 
+mar.ts <- c(0, 5.1, 0, 2.1)
+oma.ts <- c(6, 0, 5, 0)
+mar.default <- c(5.1, 4.1, 4.1, 2.1)
+oma.default <- rep(0,4)
 

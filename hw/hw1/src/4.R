@@ -5,15 +5,15 @@
 
 source("cov_fn.R")
 source("gp_sim.R")
+set.seed(1)
 
 ### MAIN ###
 num_cov_fn <- length(cov_fn)
 
 ### phi for which corr is 0.05 at distance 1 and variance=1, nu=1 ###
 phi <- lapply(cov_fn, function(x) find_phi(x, r=.05, d=1, nu=1)$root)
-phi$wave <- 2E-3 # .33
-#phi$rational_quad <- .12# .229
-wierd <- c("wave", "rational_quad")
+phi$wave <- .01 # .33
+#phi$wave <- .33
 
 ### covariance fn for this hw ###
 my_cov_fn <- lapply(as.list(1:num_cov_fn), function(i) {
@@ -27,7 +27,21 @@ n <- 100
 x <- seq(-2,2,len=n)
 
 ### PLOTS ###
-gp <- sapply(my_cov_fn, function(cf) gp_sim(x, cov_fn=cf,eps=1E-10))
-plot.ts(gp, xlab='index');
+
+gp <- sapply(my_cov_fn, function(cf) gp_sim(x, cov_fn=cf, eps=1E-6))
+
+# FIXME
+#source("gp_sim.R")
+#w <- gp_sim(x, cov_fn=my_cov_fn$wave, eps=1E-6)
 
 
+pdf('../img/gp.pdf')
+par(mfrow=c(3,2), mar=mar.ts, oma=oma.ts)
+for (i in 1:length(phi)) {
+  plot(x,gp[,i],xaxt=ifelse(i %in% c(4,5), 's', 'n'), type='l', 
+       ylab=colnames(gp)[i], ylim=c(-3,3))
+  abline(h=0, lty=2, col='grey')
+}
+par(mfrow=c(1,1), mar=mar.default, oma=oma.default)
+title(main='Gaussian Processes')
+dev.off()

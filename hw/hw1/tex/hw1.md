@@ -1,7 +1,7 @@
 ---
-title: "Title"
+title: "Spatial Statistics HW1"
 author: Arthur Lui
-date: "18 April 2017"
+date: "19 April 2017"
 geometry: margin=1in
 fontsize: 12pt
 
@@ -48,6 +48,11 @@ header-includes:
 ---
 
 ![Covariograms and semi-variograms](../img/cov.pdf){ height=90% }
+
+![Gaussian Process realizations under various correlation functions. Each
+correlation function has parameters $\sigma^2=1$, $\phi=\phi_{0.05}$, and when
+applicable $\nu=1$. The only exception is the wave correlation function, where
+$\phi=0.01$.](../img/gp.pdf){ height=90% }
 
 [//]: # ( example image embedding
 \beginmyfig
