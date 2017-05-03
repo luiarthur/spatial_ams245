@@ -1,65 +1,47 @@
-library(rootSolve)
-install.packages("rootSolve")
-combine <- function(x,y) {
-  stopifnot(length(x) == length(y))
-  n <- length(x)
-  z <- rep(NA,n)
-  for (i in 1:n) {
-    z[2*i - 1] <- x[i]
-    z[2*i] <- y[i]
-  }
-  z
-}
+source("../../hw1/src/cov_fn.R")
+source("KL.R")
+source("eigen.R")
 
-# Karhunen-Loeve Representation for exponential covariance fn
-KL_exp <- function(s, J=100, L=1, sig2=1, phi=1, interval=c(0,100), inf=1E3) {
+J <- 6
+L <- 3
 
-  w1_tmp <- uniroot.all(function(w) tan(w*L) - phi/w , interval)
-  w2_tmp <- uniroot.all(function(w) tan(w*L) + w/phi , interval)
-  w1 <- w1_tmp[which(tan(w1_tmp/L) < inf)]
-  w2 <- w2_tmp[which(tan(w2_tmp/L) < inf)]
-  print(length(w1))
-  print(length(w2))
-  w <- cbind(head(w1,J), head(w2,J))
+#KL_exp(.0,.0, J=J, L=L)
+#
+#KL_exp(.0,.1, J=J, L=L)
+#KL_exp(.1,.0, J=J, L=L)
+#KL_exp(.0,.2, J=J, L=L)
+#KL_exp(.0,.1, J=J, L=L)
+#KL_exp(.1,.2, J=J, L=L)
+#KL_exp(.2,.3, J=J, L=L)
+#KL_exp(.3,.4, J=J, L=L)
+#KL_exp(.9,1,  J=J, L=L)
+#KL_exp(2, 2.1,J=J, L=L)
+#KL_exp(2.8,2.9, J=J, L=L)
+#cov_fn$pow_exp(.1, phi=1, sig2=1)
 
-  lam12 <- apply(w, 2, function(wi) (2 * phi) / (wi^2 + phi^2) )
-  lam <- head(combine(lam12[,1], lam12[,2]), J)
+d <- seq(0,1,len=10)
 
-  # returns the vectors of length J
-  psi1 <- function(s) cos(w1*s) / sqrt(L + sin(2*w1*L) / (2*w1))
-  psi2 <- function(s) sin(w2*s) / sqrt(L - sin(2*w2*L) / (2*w2))
-  psi <- function(s) head(combine(psi1(s), psi2(s)), J)
-
-  n <- length(s)
-  C <- matrix(NA, n, n)
-  for (i in 1:n) {
-    for (j in 1:n) {
-      C[i,j] <- sum(lam * psi(s[i]) * Conj(psi(s[j])))
-    }
-  }
-
-  C
-}
+source("eigen.R")
+eigen_approx(0, J=100, L=1)
+eigen_approx(1, J=100, L=1)
 
 
-s <- seq(-1, 1, len=100)
-x <- KL_exp(s, J=10)
-x
-plot(x[1,])
+h1 <- sapply(d, function(s) KL_exp(0, s, J=J, L=L))
+h2 <- cov_fn$pow_exp(d, phi=1, sig2=1)
+h3 <- sapply(d, function(s) eigen_approx(s, J=J, L=L))
 
-n <- 1000
-w <- seq(-10,10,len=n)
-phi <- 1
-L <- 1
 
-plot(w, tan(w*L), ylim=c(-10,10), pch=20, cex=.5)
-points(w, phi/w, col='red', cex=.5, pch=20)
-lines(w, -w/phi, col='blue', lwd=2)
+pdf('../img/kl1.pdf')
+# Plot KL approx of exp corr
+plot(d, h1,type='b', ylim=range(0,h1,h2), col='blue', bty='n',
+     fg='grey', ylab='Correlation', xlab='Distance')
 
-tmp <- uniroot.all(function(w) tan(w*L) - phi/w , c(0,100))
-tmp <- tmp[which(abs(tan(tmp*L)) < 1000)]
-points(tmp, tan(tmp/L), col='red', pch=20, cex=2)
+# Plot exp corr
+lines(d, h2, type='b', col='red')
 
-tmp <- uniroot.all(function(w) tan(w*L) + w/phi , c(-10,10))
-tmp <- tmp[which(abs(tan(tmp*L)) < 1000)]
-points(tmp, tan(tmp/L),col='blue', pch=20, cex=2)
+# Plot p.13 approx
+lines(d, h3, type='b', col='green')
+
+legend("topright", legend=c('KL Approx.','Exponential Corr.'), 
+       text.col=c('blue','red'), cex=1.5, bty='n')
+dev.off()

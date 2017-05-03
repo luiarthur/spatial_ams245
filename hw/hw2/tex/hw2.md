@@ -135,6 +135,10 @@ moments of the spectral density.
 range parameter equal to 1. Plot the approximation for several orders and
 compare to the actual correlation.**
 
+See Figure \ref{kl1}.
+
+![KL representation of exponential correlation with $\phi=1$](../img/kl1.pdf){ height=70% id='kl1'}
+
 **5. Repeat for the approximation given on Page 13 of the fifth set of
 slides.**
 
