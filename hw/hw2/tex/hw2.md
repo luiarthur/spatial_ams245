@@ -58,7 +58,40 @@ header-includes:
 
 **1. Prove the results about the smoothness of the members of the Matern family.**
 
-???
+For the Matern family of correlation functions, 
+
+$$\rho(\tau) = \frac{1}{2^{\nu-1}} \Gamma(\nu) \tau^\nu \K_\nu(\tau)$$
+
+For small values of $\tau$, 
+
+$$\K_\nu(\tau) \approx \Gamma(\nu) 2^{\nu-1} \tau^{-\nu},$$
+
+for $\nu > 0$. Moreover, 
+
+$$
+\ds\frac{d}{d\tau}\p{\tau^\nu \K_\nu(\tau)} = -\tau^\nu \K_{\nu-1}(\tau).
+$$
+
+For $0 < \nu < 1/2$,
+
+\begin{align*}
+\rho'(\tau) &=
+\frac{1}{\Gamma(\nu) 2^{\nu-1}} 
+\ds\frac{d}{d\tau}\p{\tau^\nu \K_\nu(\tau)} \\
+%
+&=
+-\frac{\tau^\nu}{\Gamma(\nu) 2^{\nu-1}} 
+\K_{\nu-1}(\tau)
+\end{align*}
+
+Note the approximation mentioned above cannot be applied here for small values of
+$\tau$ because $\nu - 1 < 0$. Since $\K_{\nu-1}(0) = \infty$, 
+$\rho'(0) = -\infty$.
+
+For $1/2 < 0 < \nu$, as $\nu$ approaches 1, $\K_{\nu-1}(\tau)$ approaches
+$\Gamma(\nu-1) 2 ^{\nu-1} \tau^{-\nu}$. So, $\rho'(\tau)$ approaches 
+$-\ds\frac{\tau}{2(\nu-1)}$. Consequently, $\rho'(0) \in (-\infty, 0)$.
+
 
 **2. Use the spectral representation to show that the product of two valid
 correlation functions is a valid correlation function.**
@@ -131,18 +164,10 @@ Therefore, the $k^{th}$ moment exists when $\nu \ge \frac{k-n+1}{2}$.
 This inequality tells us that the smoothness increases with the number of
 moments of the spectral density.
 
-**4.  Use the K-L representation to approximate the exponential correlation for
-range parameter equal to 1. Plot the approximation for several orders and
-compare to the actual correlation.**
+***
 
-See Figure \ref{kl1}.
+# Computation
 
-![KL representation of exponential correlation with $\phi=1$](../img/kl1.pdf){ height=70% id='kl1'}
+See Figure \ref{KL}.
 
-**5. Repeat for the approximation given on Page 13 of the fifth set of
-slides.**
-
-**6. Generate 100 realizations of a univariate Gaussian process with
-exponential correlation with range parameter 1. Compare the empirically
-estimated eigenvalues and eigenfunctions to the ones given by the K-L and the
-approximation on Page 12.**
+![KL representation of exponential correlation with $\phi=1$ (blue), True exponential correlation (red), approximation (from p.13 of 5th set of slides) of exponential correlation (green), correlation of observations generated from a gaussian process with an exponential correlation (orange).](../img/kl1.pdf){ height=70% id='KL'}

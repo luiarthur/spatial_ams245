@@ -12,7 +12,7 @@ combine <- function(x,y) {
 }
 
 # Karhunen-Loeve Representation for exponential covariance fn
-KL_exp <- function(s1, s2, J=100, L=1, sig2=1, phi=1, 
+KL_exp <- function(s1, s2, J=5, L=1, sig2=1, phi=1, 
                    inf=1E3, n=1E6, eps=.Machine$double.eps) {
 
   w1 <- uniroot.all(function(w) tan(w*L) - phi/w ,

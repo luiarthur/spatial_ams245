@@ -1,6 +1,6 @@
 eigen_approx <- function(d, J=100, L=1) {
-  #j <- 1:J
-  j <- seq(-L,L, len=J)
+  j <- 1:J
+  #j <- seq(-L,L, len=J)
   ### CHECK THIS ###
   f <- function(k) 1 / (1 + k^2)
   #f <- function(k) 1 / (1 + k*1i)
