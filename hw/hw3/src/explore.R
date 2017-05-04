@@ -34,6 +34,6 @@ county_means <- sapply(counties, function(county) {
        mean(ca$Arithmetic.Mean[idx])
     })
 
-plot.per.county(county_means, 'california', counties, 
-                measure='', text.name=FALSE)
+plot.per.county(log(county_means), 'california', counties, 
+                measure='log county means', text.name=FALSE)
 
