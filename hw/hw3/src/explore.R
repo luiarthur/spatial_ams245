@@ -1,14 +1,26 @@
+library(sqldf)
 library(maps)
 source('plotPerCounty.R')
+
+# Example:
+#bla <- sqldf::read.csv.sql("../dat/tmp.csv", 
+#                           sql= "select * from file where `State.Name`='UT'")
 
 ### Entire Data ###
 dat <- read.csv('../dat/annual_all_2015.csv')
 
 ### California Data ###
-ca <- dat[which(dat$State.Name=='California'),]
+#ca <- dat[which(dat$State.Name=='California'),]
+
+ca <- sqldf('SELECT * from dat where `State.Name`=
+            "California" || `State.Name`="Nevada"')
+area <- sqldf('SELECT from dat where `State.Name`="California" OR `State.Name`="Nevada"')
+distinct_area <- sqldf('SELECT DISTINCT `State.Code`, `County.Code`, `Site.Num` from dat')
+
 
 ### Number of Sites in CA ###
 length(unique(ca$Site.Num))
+length(unique(cbind(area$State.Code, area$County.Code, area$Site.Num), MARGIN=1))
 
 ### Explore  ###
 hist(ca$Arithmetic.Mean)
