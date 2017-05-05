@@ -10,17 +10,32 @@ source('plotPerCounty.R')
 dat <- read.csv('../dat/annual_all_2015.csv')
 
 ### California Data ###
-#ca <- dat[which(dat$State.Name=='California'),]
+ca <- dat[which(
+  dat$State.Name=='California' &
+  dat$Parameter.Name=='Ozone' &
+  dat$Sample.Duration=='8-HR RUN AVG BEGIN HOUR' &
+  dat$Pollutant.Standard=='Ozone 8-Hour 2008')
+,]
 
-ca <- sqldf('SELECT * from dat where `State.Name`=
-            "California" || `State.Name`="Nevada"')
-area <- sqldf('SELECT from dat where `State.Name`="California" OR `State.Name`="Nevada"')
-distinct_area <- sqldf('SELECT DISTINCT `State.Code`, `County.Code`, `Site.Num` from dat')
+area <- sqldf('
+  SELECT * from dat
+  WHERE
+    `State.Name` IN("California") AND
+    `Parameter.Name`="Ozone" AND
+    `Sample.Duration`="8-HR RUN AVG BEGIN HOUR" AND
+    `Pollutant.Standard`="Ozone 8-Hour 2008"
+')
+dim(area)
 
+distinct_area <- sqldf('SELECT 
+                       `State.Code`, `County.Code`, `Site.Num` 
+                       from area
+                       GROUP BY `State.Code`, `County.Code`, `Site.Num`')
+dim(distinct_area)
 
 ### Number of Sites in CA ###
 length(unique(ca$Site.Num))
-length(unique(cbind(area$State.Code, area$County.Code, area$Site.Num), MARGIN=1))
+dim(unique(cbind(area$State.Code, area$County.Code, area$Site.Num), MARGIN=1))
 
 ### Explore  ###
 hist(ca$Arithmetic.Mean)
