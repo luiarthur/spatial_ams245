@@ -2,40 +2,57 @@ library(sqldf)
 library(maps)
 source('plotPerCounty.R')
 
-# Example:
-#bla <- sqldf::read.csv.sql("../dat/tmp.csv", 
-#                           sql= "select * from file where `State.Name`='UT'")
-
 ### Entire Data ###
 dat <- read.csv('../dat/annual_all_2015.csv')
 
 ### California Data ###
-ca <- dat[which(
-  dat$State.Name=='California' &
-  dat$Parameter.Name=='Ozone' &
-  dat$Sample.Duration=='8-HR RUN AVG BEGIN HOUR' &
-  dat$Pollutant.Standard=='Ozone 8-Hour 2008')
-,]
-
-area <- sqldf('
-  SELECT * from dat
+ca <- sqldf('
+  SELECT * FROM dat
   WHERE
     `State.Name` IN("California") AND
     `Parameter.Name`="Ozone" AND
     `Sample.Duration`="8-HR RUN AVG BEGIN HOUR" AND
     `Pollutant.Standard`="Ozone 8-Hour 2008"
 ')
-dim(area)
+dim(ca)
 
-distinct_area <- sqldf('SELECT 
-                       `State.Code`, `County.Code`, `Site.Num` 
-                       from area
-                       GROUP BY `State.Code`, `County.Code`, `Site.Num`')
+### Assert that California has enough observatsions ###
+distinct_area <- sqldf('
+  SELECT 
+    `State.Code`,  `County.Code`, `Site.Num`, `Observation.Count`
+  FROM ca
+  GROUP BY 
+    `State.Code`,  `County.Code`, `Site.Num`
+')
 dim(distinct_area)
+stopifnot(nrow(distinct_area) > 100)
+
+### Counts of All States ###
+all_states <- sqldf('
+  SELECT `State.Name`, COUNT(*) AS COUNTS
+  FROM (
+    SELECT `State.Name` FROM dat
+    WHERE
+      `Parameter.Name`="Ozone" AND
+      `Sample.Duration`="8-HR RUN AVG BEGIN HOUR" AND
+      `Pollutant.Standard`="Ozone 8-Hour 2008"
+    GROUP BY 
+      `State.Code`,  `County.Code`, `Site.Num`
+  )
+  GROUP BY `State.Name`
+')
+
+#`State.Name` IN ("Washington","Oregon")
+#`State.Name` IN ("Wyoming", "Idaho", "Montana", "Utah", "Colorado")
+#`State.Name` IN ("Pennsylvania", "Ohio", "New York")
+#sqldf('
+#  SELECT SUM(COUNTS) FROM all_states
+#  WHERE
+#    `State.Name` IN ("Pennsylvania", "Ohio", "New York")
+#')
 
 ### Number of Sites in CA ###
-length(unique(ca$Site.Num))
-dim(unique(cbind(area$State.Code, area$County.Code, area$Site.Num), MARGIN=1))
+#length(unique(ca$Site.Num))
 
 ### Explore  ###
 hist(ca$Arithmetic.Mean)
