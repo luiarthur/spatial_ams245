@@ -49,9 +49,23 @@ dim(ca)
 
 ### CA Site Data ###
 site_ca <- sqldf('
-  SELECT `County.Name`, `County.Code`, `Site.Number`, `Elevation` FROM site
+  SELECT 
+    `State.Name`,
+    `County.Name`,
+    `County.Code`,
+    `Site.Number`,
+    `Elevation`
+  FROM site
   WHERE
     `State.Name`="California" AND `State.Code`="06"
+')
+
+ca_all <- sqldf('
+  SELECT ca.*, site_ca.Elevation FROM ca LEFT JOIN site_ca
+  WHERE 
+    ca.`State.Name` = site_ca.`State.Name` AND
+    ca.`County.Name` = site_ca.`County.Name` AND
+    ca.`Site.Num` = site_ca.`Site.Number`
 ')
 
 ### Maps ###
@@ -83,13 +97,13 @@ plot.per.county(log(county_means$cmean), 'california', county_means$cname,
 
 
 ### Explore location vs altitude ###
-hist(ca$Arithmetic.Mean)
-hist((sqrt(ca$Arithmetic.Mean)))
-hist(log(sqrt(ca$Arithmetic.Mean)))
+hist(ca_all$Arithmetic.Mean)
+hist((sqrt(ca_all$Arithmetic.Mean)))
+hist(log(sqrt(ca_all$Arithmetic.Mean)))
 
-vars <- cbind(ca$Lat, ca$Lon, ca$Arithmetic.Mean)
-colnames(vars) <- c('Lat', 'Lon', 'Mean')
+
+vars <- cbind(ca_all$Lat, ca_all$Lon, ca_all$Arithmetic.Mean, ca_all$Elevation)
+colnames(vars) <- c('Lat', 'Lon', 'Mean', 'Elevation')
 my.pairs(vars)
 
-ca_all <- sqldf('
-')
+
