@@ -1,9 +1,40 @@
+library(rcommon)
 library(sqldf)
 library(maps)
 source('plotPerCounty.R')
 
 ### Entire Data ###
 dat <- read.csv('../dat/annual_all_2015.csv')
+site <- read.csv('../dat/aqs_sites.csv')
+
+### Counts of All States ###
+all_states <- sqldf('
+  SELECT `State.Name`, COUNT(*) AS Counts
+  FROM (
+    SELECT `State.Name` FROM dat
+    WHERE
+      `Parameter.Name`="Ozone" AND
+      `Sample.Duration`="8-HR RUN AVG BEGIN HOUR" AND
+      `Pollutant.Standard`="Ozone 8-Hour 2008"
+    GROUP BY 
+      `State.Code`, `County.Code`, `Site.Num`, `POC`
+  )
+  GROUP BY `State.Name`
+')
+
+### Assert that California has > 100 observation stations ###
+stopifnot(all_states[which(all_states$State == "California"), "Counts"] > 100)
+
+### Make sure I'm doing this right ###
+#`State.Name` IN ("Washington","Oregon")
+#`State.Name` IN ("Pennsylvania", "Ohio", "New York")
+# Matt Heiner got 112, I'm getting 115
+sqldf('
+  SELECT SUM(COUNTS) FROM all_states
+  WHERE
+    `State.Name` IN ("Wyoming", "Idaho", "Montana", "Utah", "Colorado")
+')
+
 
 ### California Data ###
 ca <- sqldf('
@@ -16,47 +47,12 @@ ca <- sqldf('
 ')
 dim(ca)
 
-### Assert that California has enough observatsions ###
-distinct_area <- sqldf('
-  SELECT 
-    `State.Code`,  `County.Code`, `Site.Num`, `Observation.Count`
-  FROM ca
-  GROUP BY 
-    `State.Code`,  `County.Code`, `Site.Num`
+### CA Site Data ###
+site_ca <- sqldf('
+  SELECT `County.Name`, `County.Code`, `Site.Number`, `Elevation` FROM site
+  WHERE
+    `State.Name`="California" AND `State.Code`="06"
 ')
-dim(distinct_area)
-stopifnot(nrow(distinct_area) > 100)
-
-### Counts of All States ###
-all_states <- sqldf('
-  SELECT `State.Name`, COUNT(*) AS COUNTS
-  FROM (
-    SELECT `State.Name` FROM dat
-    WHERE
-      `Parameter.Name`="Ozone" AND
-      `Sample.Duration`="8-HR RUN AVG BEGIN HOUR" AND
-      `Pollutant.Standard`="Ozone 8-Hour 2008"
-    GROUP BY 
-      `State.Code`,  `County.Code`, `Site.Num`
-  )
-  GROUP BY `State.Name`
-')
-
-#`State.Name` IN ("Washington","Oregon")
-#`State.Name` IN ("Wyoming", "Idaho", "Montana", "Utah", "Colorado")
-#`State.Name` IN ("Pennsylvania", "Ohio", "New York")
-#sqldf('
-#  SELECT SUM(COUNTS) FROM all_states
-#  WHERE
-#    `State.Name` IN ("Pennsylvania", "Ohio", "New York")
-#')
-
-### Number of Sites in CA ###
-#length(unique(ca$Site.Num))
-
-### Explore  ###
-hist(ca$Arithmetic.Mean)
-hist(ca$X50)
 
 ### Maps ###
 s <- ca[c('Latitude', 'Longitude')]
@@ -73,11 +69,27 @@ for (i in 1:length(state_county)) {
 
 
 ### Compute Means ###
-county_means <- sapply(counties, function(county) {
-       idx <- which(ca$County.Name == county)
-       mean(ca$Arithmetic.Mean[idx])
-    })
+county_means <- sqldf('
+  SELECT 
+    `County.Name` AS cname, 
+    AVG(`Arithmetic.Mean`) AS cmean, 
+    COUNT(`County.Name`) AS ccount
+  FROM ca 
+  GROUP BY `County.Name`
+')
 
-plot.per.county(log(county_means), 'california', counties, 
-                measure='log county means', text.name=FALSE)
+plot.per.county(log(county_means$cmean), 'california', county_means$cname, 
+                levels=7, measure='log county means', text.name=FALSE)
 
+
+### Explore location vs altitude ###
+hist(ca$Arithmetic.Mean)
+hist((sqrt(ca$Arithmetic.Mean)))
+hist(log(sqrt(ca$Arithmetic.Mean)))
+
+vars <- cbind(ca$Lat, ca$Lon, ca$Arithmetic.Mean)
+colnames(vars) <- c('Lat', 'Lon', 'Mean')
+my.pairs(vars)
+
+ca_all <- sqldf('
+')

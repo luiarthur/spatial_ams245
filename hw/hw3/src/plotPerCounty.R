@@ -1,7 +1,7 @@
-plot.per.county <- function(x, state.name,county.names, measure='', dig=1,
+plot.per.county <- function(x, state.name,county.names, measure='', dig=1, levels=5,
                             col.pal=colorRampPalette(c("dodgerblue",
                                                        "grey85",
-                                                       "firebrick2"))(5),
+                                                       "firebrick2"))(levels),
                             bks=NULL,percent=FALSE,paren=TRUE,text.names=TRUE,
                             text.cex=.7,num=NULL)
 {
@@ -25,9 +25,9 @@ plot.per.county <- function(x, state.name,county.names, measure='', dig=1,
   } 
 
   cs <- paste0(state.name,",",county.names)
-  map('county',state.name,col="grey90",mar=rep(0,4))
-  map('county',cs,names=TRUE,add=TRUE,fill=TRUE,
-      border="white",col=cols)
+  #map('county',state.name,col="grey90",mar=rep(0,4))
+  map('county',cs,names=TRUE,fill=TRUE, #all=TRUE,
+      border="white",col=cols, mar=rep(0,4))
 
   if (text.names) {
     if (length(text.cex)==1) text.cex <- rep(text.cex,length(cs))
