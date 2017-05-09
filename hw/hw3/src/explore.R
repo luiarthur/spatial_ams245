@@ -1,3 +1,7 @@
+# Lat: y-axis
+# Lon: x-axis
+
+library(geoR)
 library(rcommon)
 library(sqldf)
 library(maps)
@@ -100,10 +104,47 @@ plot.per.county(log(county_means$cmean), 'california', county_means$cname,
 hist(ca_all$Arithmetic.Mean)
 hist((sqrt(ca_all$Arithmetic.Mean)))
 hist(log(sqrt(ca_all$Arithmetic.Mean)))
+hist(log(ca_all$Arithmetic.Mean))
 
 
 vars <- cbind(ca_all$Lat, ca_all$Lon, ca_all$Arithmetic.Mean, ca_all$Elevation)
 colnames(vars) <- c('Lat', 'Lon', 'Mean', 'Elevation')
 my.pairs(vars)
 
+vars <- cbind(ca_all$Arithmetic.Mean, 
+              ca_all$Lat,
+              sqrt(ca_all$Lon+124.3),
+              ca_all$Elevation)
+colnames(vars) <- c('Mean', 'Lat', 'Lon', 'Elevation')
+my.pairs(vars)
 
+### Variogram ###
+plot(variog(data=ca_all$Arithmetic.Mean, coords=s, op='cloud'))
+plot(variog(data=ca_all$Arithmetic.Mean, coords=s), type='b')
+
+### Transform and detrend ###
+y <- ca_all$Arithmetic.Mean
+lon <- ca_all$Lon
+
+tlon <- log(lon-min(lon)+1)
+
+plot(lon, y)
+plot(tlon, y)
+mod <- lm(y ~ tlon)
+abline(mod)
+
+vars.new <- cbind(y-tlon*mod$coef[2], #mod$resid
+                  ca_all$Lat, ca_all$Lon,
+                  ca_all$Elev)
+colnames(vars.new) <- c('Mean.detrended', 'Lat', 'Lon', 'Elevation')
+my.pairs(vars.new)
+
+par(mfrow=c(2,1))
+plot(variog(data=ca_all$Arithmetic.Mean, coords=s), type='b', main='Semi-variogram')
+plot(variog(data=mod$resid, coord=s), type='b', main='Semi-variogram after detrend')
+par(mfrow=c(1,1))
+
+par(mfrow=2:1)
+plot(variog4(data=ca_all$Arithmetic.Mean, coords=s), type='b', main='Semi-variogram')
+plot(variog4(data=mod$resid, coord=s), type='b', main='Semi-variogram after detrend')
+par(mfrow=c(1,1))
