@@ -16,15 +16,26 @@ all_states <- sqldf('
   SELECT `State.Name`, COUNT(*) AS Counts
   FROM (
     SELECT `State.Name` FROM dat
+    /*SELECT dat.`State.Name` FROM dat LEFT JOIN site*/
     WHERE
       `Parameter.Name`="Ozone" AND
       `Sample.Duration`="8-HR RUN AVG BEGIN HOUR" AND
-      `Pollutant.Standard`="Ozone 8-Hour 2008"
+      `Pollutant.Standard`="Ozone 8-Hour 2008" AND
+      `Event.Type` IN("No Events","Concurred Events Excluded","Events Excluded") AND
+      `Completeness.Indicator` ="Y" AND
+      `POC` = "1"
+      /*
+      dat.`State.Name` = site.`State.Name` AND
+      dat.`County.Name` = site.`County.Name` AND
+      dat.`Site.Num` = site.`Site.Number` AND
+      */
+      /*site.`Elevation` > 50*/
     GROUP BY 
-      `State.Code`, `County.Code`, `Site.Num`, `POC`
+      dat.`State.Code`, dat.`County.Code`, dat.`Site.Num`, dat.`POC`
   )
   GROUP BY `State.Name`
 ')
+dim(all_states)
 
 ### Assert that California has > 100 observation stations ###
 stopifnot(all_states[which(all_states$State == "California"), "Counts"] > 100)
@@ -36,7 +47,7 @@ stopifnot(all_states[which(all_states$State == "California"), "Counts"] > 100)
 sqldf('
   SELECT SUM(COUNTS) FROM all_states
   WHERE
-    `State.Name` IN ("Wyoming", "Idaho", "Montana", "Utah", "Colorado")
+    `State.Name` IN ("Wyoming", "Idaho", "Montana", "Utah", "Colorado","Nevada","Arizona")
 ')
 
 
@@ -47,7 +58,9 @@ ca <- sqldf('
     `State.Name` IN("California") AND
     `Parameter.Name`="Ozone" AND
     `Sample.Duration`="8-HR RUN AVG BEGIN HOUR" AND
-    `Pollutant.Standard`="Ozone 8-Hour 2008"
+    `Pollutant.Standard`="Ozone 8-Hour 2008" AND
+    `Event.Type` IN("No Events","Concurred Events Excluded","Events Excluded") AND
+    `Completeness.Indicator` ="Y"
 ')
 dim(ca)
 
@@ -98,6 +111,8 @@ county_means <- sqldf('
 
 plot.per.county(log(county_means$cmean), 'california', county_means$cname, 
                 levels=7, measure='log county means', text.name=FALSE)
+plot.per.county(ca_all$Ele, 'california', county_means$cname, 
+                levels=7, measure='Count Elevation', text.name=FALSE)
 
 
 ### Explore location vs altitude ###
