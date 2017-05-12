@@ -6,6 +6,7 @@ library(rcommon)
 library(sqldf)
 library(maps)
 source('plotPerCounty.R')
+#source('../../hw1/src/cov_fn.R')
 
 ### Entire Data ###
 dat <- read.csv('../dat/annual_all_2015.csv')
@@ -126,8 +127,9 @@ hist(log(sqrt(ca_all$Arithmetic.Mean)))
 hist(log(ca_all$Arithmetic.Mean))
 
 
-vars <- cbind(ca_all$Lat, ca_all$Lon, ca_all$Arithmetic.Mean, ca_all$Elevation)
-colnames(vars) <- c('Lat', 'Lon', 'Mean', 'Elevation')
+vars <- cbind(ca_all$Arithmetic.Mean,
+              ca_all$Lat, ca_all$Lon, ca_all$Elevation)
+colnames(vars) <- c('Mean', 'Lat', 'Lon', 'Elevation')
 my.pairs(vars)
 
 vars <- cbind(ca_all$Arithmetic.Mean, 
@@ -142,35 +144,59 @@ plot(variog(data=ca_all$Arithmetic.Mean, coords=s, op='cloud'))
 plot(variog(data=ca_all$Arithmetic.Mean, coords=s), type='b')
 
 ### Transform and detrend ###
+old_mean <- ca_all$Arithmetic.Mean
+ca_all$Arithmetic.Mean <- old_mean * 100
 y <- ca_all$Arithmetic.Mean
 alt <- ca_all$Elevation
-plot(alt, y)
-plot(log(alt), y)
-#lon <- ca_all$Lon
-#tlon <- log(lon-min(lon)+1)
-#plot(lon, y)
-#plot(tlon, y)
-#mod <- lm(y ~ tlon)
 
-mod <- lm(y ~ log(alt))
-abline(mod)
+mod <- lm(y ~ ca_all$Lat + ca_all$Lon + log(alt))
 
-vars.new <- cbind(y - cbind(1, log(alt)) %*% mod$coef, #mod$resid
+plot.per.county(mod$resid, 'california', county_means$cname, 
+                levels=7, measure='log county means', text.name=FALSE)
+
+vars.new <- cbind(mod$resid,
                   ca_all$Lat, ca_all$Lon,
                   log(alt))
 colnames(vars.new) <- c('Mean.detrended', 'Lat', 'Lon', 'log(Elevation)')
 my.pairs(vars.new)
 
-par(mfrow=c(2,1))
-plot(variog(data=ca_all$Arithmetic.Mean, coords=s),
-     type='b', main='Semi-variogram')
-plot(variog(data=mod$resid, coord=s),
-     type='b', main='Semi-variogram after detrend')
+par(mfrow=2:1)
+plot(variog4(data=ca_all$Arithmetic.Mean, coords=s))
+title(main='Semi-variogram')
+#plot(variog4(data=mod$resid, coord=s), type='b')
+plot(variog4(data=ca_all$Arithmetic.Mean, coords=s, 
+             trend=ca_all$Arithmetic.Mean ~ s[,1] + s[,2] + log(alt)))
+title(main='Semi-variogram after detrend (location + log(alt))')
 par(mfrow=c(1,1))
 
-par(mfrow=2:1)
-plot(variog4(data=ca_all$Arithmetic.Mean, coords=s), type='b')
-title(main='Semi-variogram')
-plot(variog4(data=mod$resid, coord=s), type='b')
-title(main='Semi-variogram after detrend')
+vario <- variog(data=ca_all$Arithmetic.Mean, coords=s, 
+                trend=ca_all$Arithmetic.Mean ~ s[,1] + s[,2] + log(alt),
+                message=FALSE)
+
+#init <- expand.grid(seq(0,1E-5, len=100), seq(0,10,len=100))
+init <- expand.grid(seq(0,1, len=100), seq(0,2,len=100))
+
+variofit(vario, kappa=0.5)
+variofit(vario, kappa=1.5)
+
+vf1 <- variofit(vario, ini.cov.pars=init, kappa=0.5, max.dist=8)
+vf2 <- variofit(vario, ini.cov.pars=init, kappa=1.0)
+vf3 <- variofit(vario, ini.cov.pars=init, kappa=1.5)
+vf4 <- variofit(vario, ini.cov.pars=init, kappa=2.0)
+
+plt_result <- function(vf, vario, ...) {
+  plot(vario, ...)
+  abline(h=vf$cov.pars[1] + vf$nugget)
+  abline(h=vf$nugget)
+  abline(v=vf$practicalRange)
+  abline(v=vf$cov.pars[2])
+  lines(vf, lty=2)
+  #lines(0:10, (1-geoR::matern(0:10,phi=vf2$cov.pars[2],kappa=vf2$kappa)) * vf2$cov.pars[1] + vf2$nugget)
+}
+
+par(mfrow=c(2,2))
+plt_result(vf1, vario, main='Kappa=0.5')
+plt_result(vf2, vario, main='Kappa=1.0')
+plt_result(vf3, vario, main='Kappa=1.5')
+plt_result(vf4, vario, main='Kappa=2.0')
 par(mfrow=c(1,1))
