@@ -149,7 +149,7 @@ ca_all$Arithmetic.Mean <- old_mean * 100
 y <- ca_all$Arithmetic.Mean
 alt <- ca_all$Elevation
 
-mod <- lm(y ~ ca_all$Lat + ca_all$Lon + log(alt))
+mod <- lm(y ~ ca_all$Lon + log(alt))
 
 plot.per.county(mod$resid, 'california', county_means$cname, 
                 levels=7, measure='log county means', text.name=FALSE)
@@ -164,13 +164,19 @@ par(mfrow=2:1)
 plot(variog4(data=ca_all$Arithmetic.Mean, coords=s))
 title(main='Semi-variogram')
 #plot(variog4(data=mod$resid, coord=s), type='b')
+#plot(variog4(data=ca_all$Arithmetic.Mean, coords=s, 
+#             trend=ca_all$Arithmetic.Mean ~ s[,1] + s[,2] + log(alt)))
 plot(variog4(data=ca_all$Arithmetic.Mean, coords=s, 
-             trend=ca_all$Arithmetic.Mean ~ s[,1] + s[,2] + log(alt)))
+             trend=ca_all$Arithmetic.Mean ~ s[,2] + log(alt)))
 title(main='Semi-variogram after detrend (location + log(alt))')
 par(mfrow=c(1,1))
 
+#vario <- variog(data=ca_all$Arithmetic.Mean, coords=s, 
+#                trend=ca_all$Arithmetic.Mean ~ s[,1] + s[,2] + log(alt),
+#                message=FALSE)
+
 vario <- variog(data=ca_all$Arithmetic.Mean, coords=s, 
-                trend=ca_all$Arithmetic.Mean ~ s[,1] + s[,2] + log(alt),
+                trend=ca_all$Arithmetic.Mean ~ s[,2] + log(alt),
                 message=FALSE)
 
 #init <- expand.grid(seq(0,1E-5, len=100), seq(0,10,len=100))
@@ -179,24 +185,33 @@ init <- expand.grid(seq(0,1, len=100), seq(0,2,len=100))
 variofit(vario, kappa=0.5)
 variofit(vario, kappa=1.5)
 
-vf1 <- variofit(vario, ini.cov.pars=init, kappa=0.5, max.dist=8)
+vf1 <- variofit(vario, ini.cov.pars=init, kappa=0.5)
 vf2 <- variofit(vario, ini.cov.pars=init, kappa=1.0)
 vf3 <- variofit(vario, ini.cov.pars=init, kappa=1.5)
 vf4 <- variofit(vario, ini.cov.pars=init, kappa=2.0)
 
-plt_result <- function(vf, vario, ...) {
-  plot(vario, ...)
-  abline(h=vf$cov.pars[1] + vf$nugget)
-  abline(h=vf$nugget)
-  abline(v=vf$practicalRange)
-  abline(v=vf$cov.pars[2])
-  lines(vf, lty=2)
+plt_result <- function(vf, vario, leg.col=rgb(.9,.9,.9,.8), ...) {
+  plot(vario, bty='n', fg='grey', pch=20, col='grey30',...)
+  abline(h=vf$cov.pars[1] + vf$nugget, col='orange')
+  abline(h=vf$nugget, lty=3, col='orange')
+  abline(v=vf$practicalRange, col='blue')
+  abline(v=vf$cov.pars[2], lty=3, col='blue')
+  lines(vf, col='grey30', lty=2)
   #lines(0:10, (1-geoR::matern(0:10,phi=vf2$cov.pars[2],kappa=vf2$kappa)) * vf2$cov.pars[1] + vf2$nugget)
+  legend('bottomright',
+         legend=c('fitted','nugget','sill','range','practical range'),
+         col=c('grey30', 'orange', 'orange', 'blue', 'blue'),
+         lty=c(2,3,1,3,1),
+         bg=leg.col, box.col=leg.col)
 }
 
 par(mfrow=c(2,2))
-plt_result(vf1, vario, main='Kappa=0.5')
-plt_result(vf2, vario, main='Kappa=1.0')
-plt_result(vf3, vario, main='Kappa=1.5')
-plt_result(vf4, vario, main='Kappa=2.0')
+plt_result(vf1, vario, main=paste('Kappa = 0.5,  loss =',round(vf1$value,3)))
+plt_result(vf2, vario, main=paste('Kappa = 1.0,  loss =',round(vf2$value,3)))
+plt_result(vf3, vario, main=paste('Kappa = 1.5,  loss =',round(vf3$value,3)))
+plt_result(vf4, vario, main=paste('Kappa = 2.0,  loss =',round(vf4$value,3)))
 par(mfrow=c(1,1))
+
+vf <- list(vf1, vf2, vf3, vf4)
+
+vf.best <- vf[[ which.min(sapply(vf, function(x) x$value)) ]]
