@@ -6,6 +6,7 @@ library(rcommon)
 library(sqldf)
 library(maps)
 source('plotPerCounty.R')
+source('loglikeSillRange.R')
 #source('../../hw1/src/cov_fn.R')
 
 ### Entire Data ###
@@ -125,7 +126,7 @@ hist(ca_all$Arithmetic.Mean)
 hist((sqrt(ca_all$Arithmetic.Mean)))
 hist(log(sqrt(ca_all$Arithmetic.Mean)))
 hist(log(ca_all$Arithmetic.Mean))
-
+plot(ca_all$Elevation, ca_all$Arithmetic.Mean)
 
 vars <- cbind(ca_all$Arithmetic.Mean,
               ca_all$Lat, ca_all$Lon, ca_all$Elevation)
@@ -175,10 +176,14 @@ par(mfrow=c(1,1))
 #                trend=ca_all$Arithmetic.Mean ~ s[,1] + s[,2] + log(alt),
 #                message=FALSE)
 
+#vario <- variog(data=ca_all$Arithmetic.Mean, coords=s, 
+#                trend=ca_all$Arithmetic.Mean ~ s[,2] + alt,
+#                message=FALSE)
 vario <- variog(data=ca_all$Arithmetic.Mean, coords=s, 
                 trend=ca_all$Arithmetic.Mean ~ s[,2] + log(alt),
                 message=FALSE)
 
+# initial sig2, range
 #init <- expand.grid(seq(0,1E-5, len=100), seq(0,10,len=100))
 init <- expand.grid(seq(0,1, len=100), seq(0,2,len=100))
 
@@ -215,3 +220,8 @@ par(mfrow=c(1,1))
 vf <- list(vf1, vf2, vf3, vf4)
 
 vf.best <- vf[[ which.min(sapply(vf, function(x) x$value)) ]]
+
+X <- as.matrix(cbind(1,mod$model[,-1]))
+loglikeSillRange(sig2=.22, phi=.426, tau2=vf.best$nug+.1, kappa=1, y, X) 
+
+loglikeSillRange()
