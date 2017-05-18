@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# -s        =>  create standalone file (in this case report.tex latex file)
+# --toc     =>  create table of contents
+# --natbib  =>  use the natbib package in latex
+# -o        =>  output file name
+
+pandoc bayesPollutant.md -s -V documentclass:asaproc -o bayesPollutant.tex --number-sections --natbib
+
+pdflatex bayesPollutant.tex
+bibtex bayesPollutant.aux
+pdflatex bayesPollutant.tex
+pdflatex bayesPollutant.tex
+rm -f *.{log,aux,nav,out,snm,toc,blg,bbl}
+rm -f bayesPollutant.tex
+
