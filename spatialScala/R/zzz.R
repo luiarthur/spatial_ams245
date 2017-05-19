@@ -2,7 +2,7 @@
 
   ### SET THESE: ###
   SCALA_PACKAGE_NAME <- "spatialScala"
-  SCALA_JAR_PATH_REL_JAVA_DIR <- "spatialScala/target/scala-2.11/spatialScala-assembly-0.1.0.jar"
+  SCALA_JAR_PATH_REL_JAVA_DIR <- "target/scala-2.11/spatialScala-assembly-0.1.0.jar"
   ##################
 
   lib_java_path <- paste0(libname, "/", pkgname, "/java")
@@ -13,7 +13,7 @@
     # Compile the jar from src
     compile_jar <- "sbt assembly;"
     cd_path <- paste0("cd ",lib_java_path, "/", SCALA_PACKAGE_NAME, ";")
-    mv_jar <- paste0("mv ", SCALA_JAR_PATH_REL_JAVA_DIR , " ../")
+    mv_jar <- paste0("mv ", SCALA_JAR_PATH_REL_JAVA_DIR , ' ../')
     print(cd_path)
     print(mv_jar)
 
