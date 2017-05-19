@@ -88,12 +88,12 @@ $$
 The collapsed model with the accompanying priors are:
 $$
 \begin{split}
-\y \mid \bmu, \tau^2, \psi, \sigma^2, \bbeta &\sim 
+\y \mid \tau^2, \sigma^2, \psi, \bbeta &\sim 
 \N_n(\X\bbeta, \tau^2 \I + \sigma^2\R_\psi)\\
 %%%
 \tau^2 &\sim \IG(a_\tau,b_\tau) \\
-\bbeta &\sim \N_k(\zero, s^2\I) \\
 \sigma^2 &\sim \IG(a_\sigma,b_\sigma) \\
+p(\bbeta) &\propto 1\\
 \\
 \psi:\\
 \phi   &\sim \Unif(a_\phi, b_\phi) \\        % 0   - 10

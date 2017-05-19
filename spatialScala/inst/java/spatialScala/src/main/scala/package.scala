@@ -7,6 +7,5 @@ package object spatialScala {
     println("Elapsed time: " + (t1 - t0) / 1E9 + "s")
     result
   }
-
 }
 

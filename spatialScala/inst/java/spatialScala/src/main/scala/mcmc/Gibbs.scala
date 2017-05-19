@@ -1,4 +1,4 @@
-package spatialScala
+package spatialScala.mcmc
 
 object Gibbs {
 
