@@ -14,7 +14,7 @@ GP <- function(y, X, loc, stepSigCov, a_tau, b_tau,
     spatialScala.GPs.fitMatern(
       breeze.linalg.DenseVector(@{y}),
       breeze.linalg.DenseMatrix(@{k},@{n},@{X}).t,
-      breeze.linalg.DenseMatrix(@{p},@{n},@{loc}),
+      breeze.linalg.DenseMatrix(@{p},@{n},@{loc}).t,
       breeze.linalg.DenseMatrix(4,4,@{stepSigCov}),
       @{a_tau},
       @{b_tau},
