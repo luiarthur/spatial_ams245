@@ -8,10 +8,10 @@ GP <- function(y, X, loc, stepSigCov, a_tau, b_tau,
   #rscala::s$do()
   rscala::"%~%"(s, '
     spatialScala.GPs.fitMatern(
-      DenseVector(@{y}),
-      DenseMatrix(@{X}),
-      DenseMatrix(@{loc}),
-      DenseMatrix(@{stepSigCov}),
+      breeze.linalg.DenseVector(@{y}),
+      breeze.linalg.DenseMatrix(@{X}),
+      breeze.linalg.DenseMatrix(@{loc}),
+      breeze.linalg.DenseMatrix(@{stepSigCov}),
       @{a_tau},
       @{b_tau},
       @{a_sig},
