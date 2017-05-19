@@ -1,3 +1,14 @@
+GP <- function(y, X, loc, stepSigCov, a_tau, b_tau, 
+               a_sig, b_sig, a_phi, b_phi, 
+               a_nu, b_nu, B, burn, print_every=0,
+               cov_fn="matern") {
+  #' @export
+
+  gp_wrapper(y, X, loc, stepSigCov, a_tau, b_tau,
+             a_sig, b_sig, a_phi, b_phi, 
+             a_nu, b_nu, B, burn, print_every=0, cov_fn="matern")
+}
+
 gp_wrapper <- rscala::"%~%"(
   s$def(y, X, loc, stepSigCov, a_tau, b_tau, 
         a_sig, b_sig, a_phi, b_phi, 
