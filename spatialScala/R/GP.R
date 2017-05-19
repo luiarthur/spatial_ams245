@@ -6,7 +6,7 @@ GP <- function(y, X, s, stepSigCov, a_tau, b_tau,
   #' @export
   #rscala::scalaEval(s,'rBreeze.repeat(@{n})')
   #rscala::s$do()
-  rscala::scalaEval(s, '
+  rscala::%~%(s, '
     spatialScala.GPs.fitMatern(
       DenseVector(@{y}),
       DenseMatrix(@{X}),
