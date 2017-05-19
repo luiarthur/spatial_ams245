@@ -69,4 +69,7 @@ colnames(vars) <- c('Mean', 'Lat', 'Lon', 'log(Elevation)')
 my.pairs(vars)
 #dev.off()
 
+#### TEST ####
+devtools::install_github("luiarthur/spatial_ams245/spatialScala")
+library(spatialScala)
 
