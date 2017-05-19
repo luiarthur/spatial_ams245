@@ -41,11 +41,16 @@ header-includes:
     - \def\M{\mathcal{M}}
 #}}}1
     # Other header-includes:
-    - \newcommand{\y}{\bm{y}}
+    - \newcommand{\y}{\mathrm{\mathbf{y}}}
+    - \newcommand{\R}{\mathrm{\mathbf{R}}}
     - \newcommand{\bbeta}{\bm{\beta}}
-    - \newcommand{\X}{\bm{X}}
+    - \newcommand{\X}{\mathrm{\mathbf X}}
     - \newcommand{\w}{\bm{w}}
+    - \newcommand{\bmu}{\bm{\mu}}
     - \newcommand{\s}{\bm{s}}
+    - \newcommand{\zero}{\bm{0}}
+    - \newcommand{\IG}{\text{IG}}
+    - \newcommand{\Unif}{\text{Unif}}
 include-before:
 - \title{Bayesian Analysis of Pollutants Data}
 - \author{Arthur Lui \\ AMS 245 - Spatial Statistics \\ UC Santa Cruz \\\\ \today}
@@ -66,8 +71,36 @@ include-before:
 
 ## Model
 $$
-\y(\s) = \X(\s)\bbeta + \w(\s) \bm\epsilon
+\begin{split}
+\y(\s) &= \bmu(\s) + \bm\epsilon \\
+\bmu(\s) &= \X(\s)\bbeta + \w(\s) \\
+\end{split}
 $$
+
+Let $\psi$ be $(\nu, \kappa, \phi)$, the parameters in the covariance function.
+$$
+\begin{split}
+\y \mid \bmu, \tau^2 &\sim \N_n(\bmu, \tau^2 \I)\\
+\bmu \mid \bbeta, \psi, \sigma^2 &\sim \N_n(\X\bbeta, \sigma^2 \R_\psi) \\
+\end{split}
+$$
+
+The collapsed model with the accompanying priors are:
+$$
+\begin{split}
+\y \mid \bmu, \tau^2, \psi, \sigma^2, \bbeta &\sim 
+\N_n(\X\bbeta, \tau^2 \I + \sigma^2\R_\psi)\\
+%%%
+\tau^2 &\sim \IG(a_\tau,b_\tau) \\
+\bbeta &\sim \N_k(\zero, s^2\I) \\
+\sigma^2 &\sim \IG(a_\sigma,b_\sigma) \\
+\\
+\psi:\\
+\phi   &\sim \Unif(a_\phi, b_\phi) \\        % 0   - 10
+\nu    &\sim \Unif(a_\nu,  b_\nu) \\         % 1.5 - 2.5
+\end{split}
+$$
+
 
 
 # Analysis
