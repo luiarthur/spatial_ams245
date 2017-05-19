@@ -15,7 +15,7 @@ gp_wrapper <- s$def(y, X, loc, stepSigCov,
                     a_phi, b_phi, 
                     a_nu, b_nu,
                     B, burn, print_every=0,
-                    cov_fn="matern"), %~% '
+                    cov_fn="matern") %~% '
   val n = y.size
   val p = 2
   val k = 3
