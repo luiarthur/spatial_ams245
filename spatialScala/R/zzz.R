@@ -13,7 +13,7 @@
     # Compile the jar from src
     compile_jar <- "sbt assembly;"
     cd_path <- paste0("cd ",lib_java_path, "/", SCALA_PACKAGE_NAME, ";")
-    mv_jar <- paste0("mv", SCALA_JAR_PATH_REL_JAVA_DIR , "../")
+    mv_jar <- paste0("mv ", SCALA_JAR_PATH_REL_JAVA_DIR , "../")
 
     system(paste(cd_path, compile_jar, mv_jar))
   }
