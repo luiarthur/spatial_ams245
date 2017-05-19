@@ -73,3 +73,5 @@ my.pairs(vars)
 devtools::install_github("luiarthur/spatial_ams245/spatialScala")
 library(spatialScala)
 
+X <- vars[,-1]
+out <- GP(y,X,s,diag(4), 2, 1, 2, 1, 0,2, 1.5, 2.5, 1000, 300)
