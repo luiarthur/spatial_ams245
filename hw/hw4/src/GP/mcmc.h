@@ -31,7 +31,7 @@ void gibbs(S state,
 }
 
 double logit(double p) {
-  return log(p / (1 - p);
+  return log(p / (1 - p));
 }
 
 double inv_logit(double x) {
@@ -56,10 +56,10 @@ int wsample_index(double p[], int n) { // GOOD
 }
 
 namespace metropolis {
-  arma::vec rmvnorm(m, S) {
-    int n = M.n_rows;
+  arma::vec rmvnorm(arma::vec m, arma::mat S) {
+    int n = m.n_rows;
     arma::mat e = arma::randn(n);
-    return M + arma::chol(S).t() * e;
+    return m + arma::chol(S).t() * e;
   }
 
   // Uniariate Metropolis step with Normal proposal
@@ -79,11 +79,11 @@ namespace metropolis {
   }
 
   // Uniariate Metropolis step with Normal proposal
-  NumericVector mv(NumericVector curr, std::function<double(NumericVector)> ll, 
-                   std::function<double(NumericVector)> lp, NumericMatrix stepSig) {
-    const double cand = rmvnorm(curr, stepSig);
+  arma::vec mv(arma::vec curr, std::function<double(arma::vec)> ll, 
+                   std::function<double(arma::vec)> lp, arma::mat stepSig) {
+    const auto cand = rmvnorm(curr, stepSig);
     const double u = R::runif(0, 1);
-    NumericVector out;
+    arma::vec out;
 
     if (ll(cand) + lp(cand) - ll(curr) - lp(curr) > log(u)) {
       out = cand;
@@ -115,7 +115,7 @@ namespace metropolis {
   }
 
   double lp_log_igamma(double log_x, double a, double bNumer) {
-    return lp_igamma(exp(log_x), shape, rate) + log_x;
+    return lp_igamma(exp(log_x), a, bNumer) + log_x;
   }
 
   double lp_log_gamma_with_const(double log_x, double shape, double rate) {
@@ -123,7 +123,7 @@ namespace metropolis {
   }
 
   double lp_log_igamma_with_const(double log_x, double a, double bNumer) {
-    return lp_igamma_with_const(exp(log_x), shape, rate) + log_x;
+    return lp_igamma_with_const(exp(log_x), a, bNumer) + log_x;
   }
 
   double lp_logit_unif(double logit_u) {

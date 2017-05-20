@@ -32,7 +32,7 @@ ca <- sqldf('
 dim(ca)
 
 ### Maps ###
-s <- ca[c('Latitude', 'Longitude')]
+s <- as.matrix(ca[c('Latitude', 'Longitude')])
 counties <- as.character(unique(ca$County.Name))
 state_county <- tolower(paste0('California,', counties))
 
@@ -77,4 +77,12 @@ my.pairs(vars)
 #X <- vars[,-1]
 #out <- GP(y,X,s,diag(4), 2, 1, 2, 1, 0,2, 1.5, 2.5, 1000, 300)
 library(Rcpp)
+Sys.setenv("PKG_CXXFLAGS"="-std=c++11")
 sourceCpp("GP/gp.cpp")
+
+y <- ca$Arithmetic.Mean
+X <- vars[,-1]
+out <- fit(y, X, s, diag(4), 2, 1, 2, 1, 0, 2, 1.5, 2.5, 1000, 300, 0)
+
+
+

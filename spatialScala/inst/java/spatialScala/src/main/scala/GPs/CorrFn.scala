@@ -17,8 +17,9 @@ object CorrFn {
   // phi:  range
   // nu:   smoothness
   def matern(d: Double, phi: Double, nu: Double): Double = {
+    val u = d / phi
     val logR = -((nu-1) * log(2) + lgamma(nu)) + 
-                 nu * log(d / phi) + log(besselJ(d, nu))
+                 nu * log(u) + log(besselJ(u, nu))
 
     exp(logR)
   }

@@ -3,41 +3,80 @@
 // Just vectors. then make wrapper for R.
 
 struct State { 
-  NumericVector beta;
+  arma::vec beta;
   double tau2; // nugget
   double sig2; // covariance function scale
   double phi;  // range
   double nu;   // smoothness
 };
 
+/*  d:   distance
+ *  phi: range
+ *  nu:  smoothness
+ *  bessel: http://dirk.eddelbuettel.com/code/rcpp/html/Rmath_8h_source.html
+ */
+
+double matern(double d, double phi, double nu) { // GOOD
+  // bessel_k = besselK in R
+  const double u = (d > 0) ? d / phi : 1E-10;
+  const double logR = -((nu-1) * log(2) + R::lgammafn(nu)) + 
+                      nu * log(u) + log(R::bessel_k(u, nu, 1));
+  return exp(logR);
+}
+
 //[[Rcpp::export]]
-NumericMatrix fit(NumericVector y, NumericMatrix X,
-                  NumericMatrix s, 
-                  NumericMatrix stepSig,
-                  double a_tau, double b_tau,
-                  double a_sig, double b_sig,
-                  double a_phi, double b_phi,
-                  double a_nu,  double b_nu,
-                  int B, int burn, int printEvery) {
+arma::mat fit(arma::vec y, arma::mat X,
+              arma::mat s, 
+              arma::mat stepSig,
+              double a_tau, double b_tau,
+              double a_sig, double b_sig,
+              double a_phi, double b_phi,
+              double a_nu,  double b_nu,
+              int B, int burn, int printEvery) {
 
   // Initialize
-  //const int n = y.size();
-  //const int k = X.
-  //std::vector<double> init_v(y.size(), 0.5);
-  //auto init = State{ init_v };
-  //NumericMatrix out(y.size(), B);
+  const int n = X.n_rows;
+  const int k = X.n_cols;
+  const int p = 4; // number of params in cov matrix
+  const arma::vec init_beta = arma::zeros<arma::vec>(k);
+  const auto init_tau2 = 1.0;
+  const auto init_sig2 = 1.0;
+  const auto init_phi = (a_phi + b_phi) / 2.0;
+  const auto init_nu = (a_nu + b_nu) / 2.0;
+  const auto I_n = arma::eye<arma::mat>(n, n);
+  auto init = State{ init_beta, init_tau2, init_sig2, init_phi, init_nu };
 
+  // Distance Matrix
+  Function dist = Environment("package:stats")["dist"];
+  Function as_matrix = Environment("package:base")["as.matrix"];
+  /* as<arma::mat>(x) => cast NumericMatrix as arma::mat
+   * wrap(x) => cast SEXP as Rcpp type (NumericMatrix / NumericVector)
+   */
+  arma::mat D = as<arma::mat>( wrap(as_matrix(dist(s))) );
 
-  //// Update Fn
-  //auto update = [alpha, cs, y, m] (State& state) {
-  //  auto lf = [&y,&m](double p, int i) {
-  //    return y[i] * log(p) + (m - y[i]) * log(1-p);
-  //  };
-  //  auto lg0 = [](double p){return 0.0;};
-  //  auto rg0 = [](){return R::runif(0,1);};
+  // preallocate output
+  arma::mat out(k + p, B);
 
-  //  algo8(alpha, state.v, cs, lf, lg0, rg0, metLogit);
-  //};
+  // Update Fn
+  auto update = [&y, &X, &D, &I_n, n, k, p] (State& state) {
+    arma::mat R(n, n);
+    for (int i=0; i<n; i++) {
+      for (int j=0; j<n; j++) {
+        R(i, j) = matern(D(i,j), state.phi, state.nu);
+      }
+    }
+    arma::mat V = state.tau2 * I_n + state.sig2 * R;
+
+    // update beta
+    auto const Vi = arma::inv(V);
+    auto const XtVi = X.t() * Vi;
+    auto const Sig_hat = arma::inv(XtVi * X);
+    auto const beta_hat = Sig_hat * XtVi * y;
+    state.beta = metropolis::rmvnorm(beta_hat, Sig_hat);
+     
+    // update cov params FIXME
+
+  };
 
 
   //// Assign Function
@@ -50,5 +89,5 @@ NumericMatrix fit(NumericVector y, NumericMatrix X,
   //gibbs<State>(init, update, ass, B, burn, printEvery);
 
   //return out;
-  return X;
+  return D;
 }
