@@ -16,6 +16,17 @@ struct State {
  *  bessel: http://dirk.eddelbuettel.com/code/rcpp/html/Rmath_8h_source.html
  */
 
+double logdmvnorm(arma::vec y, arma::vec m, arma::mat S) {
+  double ld_S, sign;
+  arma::log_det(ld_S, sign, S);
+
+  const int n = y.size();
+  const auto c = arma::reshape(y - m, n, 1);
+  
+  const arma::mat K = c.t() * inv(S) * c;
+  return -0.5 * (ld_S + K(0,0));
+}
+
 double matern(double d, double phi, double nu) { // GOOD
   // bessel_k = besselK in R
   const double u = (d > 0) ? d / phi : 1E-10;
@@ -46,6 +57,8 @@ arma::mat fit(arma::vec y, arma::mat X,
   const auto I_n = arma::eye<arma::mat>(n, n);
   auto init = State{ init_beta, init_tau2, init_sig2, init_phi, init_nu };
 
+  const auto bla = logdmvnorm(y, y, I_n);
+
   // Distance Matrix
   Function dist = Environment("package:stats")["dist"];
   Function as_matrix = Environment("package:base")["as.matrix"];
@@ -75,6 +88,9 @@ arma::mat fit(arma::vec y, arma::mat X,
     state.beta = metropolis::rmvnorm(beta_hat, Sig_hat);
      
     // update cov params FIXME
+    //auto ll[&state, &V](double p) {
+    //  
+    //}
 
   };
 

@@ -10,4 +10,3 @@ libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-math3" % "3.6.1", // For bessel functions
   "org.scalatest" %% "scalatest" % "3.0.0" % "test"
 )
-

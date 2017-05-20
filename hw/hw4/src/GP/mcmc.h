@@ -59,7 +59,7 @@ namespace metropolis {
   arma::vec rmvnorm(arma::vec m, arma::mat S) {
     int n = m.n_rows;
     arma::mat e = arma::randn(n);
-    return m + arma::chol(S).t() * e;
+    return arma::vectorise(m + arma::chol(S).t() * e);
   }
 
   // Uniariate Metropolis step with Normal proposal
