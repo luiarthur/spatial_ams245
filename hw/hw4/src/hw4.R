@@ -76,12 +76,18 @@ my.pairs(vars)
 #y <- ca$Arithmetic.Mean
 #X <- vars[,-1]
 #out <- GP(y,X,s,diag(4), 2, 1, 2, 1, 0,2, 1.5, 2.5, 1000, 300)
-library(Rcpp)
-Sys.setenv("PKG_CXXFLAGS"="-std=c++11")
-sourceCpp("GP/gp.cpp")
+#library(Rcpp)
+#Sys.setenv("PKG_CXXFLAGS"="-std=c++11")
+#sourceCpp("GP/gp.cpp")
+#
+#y <- ca$Arithmetic.Mean
+#X <- vars[,-1]
+#out <- fit(y, X, s, diag(4), 2, 1, 2, 1, 0, 2, 1.5, 2.5, 1000, 300, 0)
+
+source("GP_R/gp.R", chdir=TRUE)
 
 y <- ca$Arithmetic.Mean
 X <- vars[,-1]
-out <- fit(y, X, s, diag(4), 2, 1, 2, 1, 0, 2, 1.5, 2.5, 1000, 300, 0)
+out <- gp(y, X, s, diag(4)) ### FIXME
 
 

@@ -1,3 +1,7 @@
+log_det <- function(X) {
+  determinant(X, log=TRUE)$mod[1]
+}
+
 ### Univariate metropolis with Normal proposal ###
 mh <- function(x, log_fc, step_size) {
   cand <- rnorm(1, x, step_size)
@@ -24,15 +28,25 @@ mh_mv <- function(x, log_fc, step_size) {
 }
 
 ### Gibbs Sampler (generic) ###
-gibbs <- function(init, update, B, burn) {
+gibbs <- function(init, update, B, burn, print_every=0) {
+  out <- as.list(1:B)
   out[[1]] <- init
 
-  for (i in 2:(B+burn)) {
-    out[[i]] <- update(out[[i-1]])
+  for (i in 1:(B+burn)) {
+    if (i - burn < 2) {
+      out[[1]] <- update(out[[1]])
+    } else {
+      out[[i-burn]] <- update(out[[i-burn-1]])
+    }
+    if (print_every > 0 && i %% print_every == 0) {
+      cat("\rProgress: ", i, " / ", B+burn)
+    }
   }
+  cat("\n")
 
-  return(tail(out, B))
+  out
 }
+#x <- gibbs(1, function(x) {Sys.sleep(.1); x + 1}, 10, 0, 3)
 
 ### Transforming parameters ###
 logit <- function(p, a, b) {
@@ -49,14 +63,21 @@ log_den_logx_2param <- function(log_den) {
 
 log_dgamma <- function(x, a, b) dgamma(x, a, b, log=TRUE)
 
-log_digamma <- function(x, a, b_numer) {
+log_dinvgamma <- function(x, a, b_numer) {
   const <- a * log(b_numer) - lgamma(a)
   -(a + 1) * log(x) - b_numer / x + const
 }
 
 lp_log_gamma <- log_den_logx_2param(log_dgamma)
-lp_log_igamma <- log_den_logx_2param(log_digamma)
+lp_log_invgamma <- log_den_logx_2param(log_dinvgamma)
 
 lp_logit_unif <- function(logit_u) {
   logit_u - 2 * log(1 + exp(logit_u))
+}
+
+ldmvnorm <- function(y, m, S) {
+  #' Density of multivariate normal up to proportionality constant
+  z <- y - m
+  out <- -(log_det(S) + t(z) %*% solve(S) %*% z) / 2
+  out[1,1]
 }
