@@ -61,12 +61,12 @@ colnames(vars) <- c('Mean', 'Lat', 'Lon', 'Elevation')
 my.pairs(vars)
 
 #pdf('../tex/img/mypairs.pdf')
-vars <- cbind(ca$Arithmetic.Mean, 
+new_vars <- cbind(ca$Arithmetic.Mean, 
               ca$Lat,
               ca$Lon,
               log(ca$Elevation))
-colnames(vars) <- c('Mean', 'Lat', 'Lon', 'log(Elevation)')
-my.pairs(vars)
+colnames(new_vars) <- c('Mean', 'Lat', 'Lon', 'log(Elevation)')
+my.pairs(new_vars)
 #dev.off()
 
 #### TEST ####
@@ -86,8 +86,20 @@ my.pairs(vars)
 
 source("GP_R/gp.R", chdir=TRUE)
 
-y <- ca$Arithmetic.Mean
-X <- vars[,-1]
-out <- gp(y, X, s, diag(4)) ### FIXME
+y <- ca$Arithmetic.Mean * 1000
+X <- cbind(1, new_vars[, c("Lon", "log(Elevation)")])
 
+burn <- gp(y, X, s, diag(3), B=1000, burn=1000, print_every=10)
+plotPosts(burn[, 1:3])
+plotPosts(burn[, -c(1:3)])
+burn_cov <- cov(burn[, 4:6])
+
+out <- gp(y, X, s, burn_cov * .01, 
+          b_tau = mean(burn[, 4]),
+          b_sig = mean(burn[, 5]),
+          B=2000, burn=10000, print_every=10)
+plotPosts(out[, 1:3])
+plotPosts(out[, -c(1:3)])
+
+nrow(unique(out[, -c(1:3)])) / nrow(out)
 

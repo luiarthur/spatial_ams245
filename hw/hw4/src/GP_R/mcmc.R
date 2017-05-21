@@ -3,28 +3,27 @@ log_det <- function(X) {
 }
 
 ### Univariate metropolis with Normal proposal ###
-mh <- function(x, log_fc, step_size) {
+mh <- function(x, ll, lp, step_size) {
   cand <- rnorm(1, x, step_size)
-  acc <- log_fc(cand) - log_fc(x)
+  acc <- ll(cand) + lp(cand) - ll(x) - lp(x)
   u <- runif(1)
 
-  out <- ifelse(acc > log(u), cand, x)
-  return(out)
+  ifelse(acc > log(u), cand, x)
 }
 
 ### Sample from multivariate Normal ###
 mvrnorm <- function(m, S) {
-  m + t(chol(S)) %*% rnorm(ncol(S))
+  m + t(chol(S)) %*% rnorm(ncol(S)) ### FIXME
+  #MASS::mvrnorm(1, m, S)
 }
 
 ### Multivariate metropolis with Normal proposal ###
-mh_mv <- function(x, log_fc, step_size) {
+mh_mv <- function(x, ll, lp, step_size) {
   cand <- mvrnorm(x, step_size)
-  acc <- log_fc(cand) - log_fc(x)
+  acc <- ll(cand) + lp(cand) - ll(x) - lp(x)
   u <- runif(1)
 
-  out <- ifelse(acc > log(u), cand, x)
-  return(out)
+  if(acc > log(u)) cand else x
 }
 
 ### Gibbs Sampler (generic) ###
