@@ -99,7 +99,8 @@ out <- gp(y, X, s, burn_cov * .01,
           b_sig = mean(burn[, 5]),
           B=2000, burn=10000, print_every=10)
 plotPosts(out[, 1:3])
-plotPosts(out[, -c(1:3)])
+plotPosts(out[, 4:6])
 
 nrow(unique(out[, -c(1:3)])) / nrow(out)
-
+plot(table(out[, 7]) / sum(out[,7]), pch=20, type='p', cex=5, col='steelblue',
+     ylim=0:1, xlim=c(.5,2))
