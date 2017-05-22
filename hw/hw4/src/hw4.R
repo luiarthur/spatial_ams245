@@ -103,15 +103,29 @@ X <- cbind(1, new_vars[, c("Lon", "log(Elevation)")])
 map('county', 'california')
 quilt.plot(ca$Lon, ca$Lat, y, add=TRUE)
 
+#f <- function(x) x^2 + 10 
+#X.test <- matrix(1, 30)
+#x <- rnorm(length(X.test))
+#y.test <- as.numeric(f(x) + X.test)
+#plot(x,y.test)
+#test <- gp(y.test, X.test, x, diag(3), 
+#           a_sig=2, b_sig=10,
+#           nu_choice=2.5,
+#           B=1000, burn=3000, print_every=10)
+#nrow(unique(test[, c(2:4)])) / nrow(test)
+#cov(test[, 2:4])
+#plotPosts(test[, 1:4])
+#table(test[,5]) / nrow(test)
+
 burn <- gp(y, X, s, diag(3), 
-           nu_choice=2.5,  #seq(.5, 2.5, by=1),
+           nu_choice=seq(.5, 2.5, by=1),
            B=1000, burn=1000, print_every=10)
 plotPosts(burn[, 1:3])
 plotPosts(burn[, -c(1:3)])
 burn_cov <- cov(burn[, 4:6])
 
 out <- gp(y, X, s, burn_cov * .01, 
-          nu_choice=2.5, #seq(.5, 2.5, by=1),
+          nu_choice=seq(.5, 2.5, by=1),
           b_tau = mean(burn[, 4]),
           b_sig = mean(burn[, 5]),
           B=2000, burn=10000, print_every=10)
