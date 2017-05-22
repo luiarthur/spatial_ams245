@@ -17,7 +17,7 @@ gp <- function(y, X, s,
                stepSigCov,
                a_tau=2, b_tau=1, 
                a_sig=2, b_sig=1, 
-               a_phi=0, b_phi=1, 
+               a_phi=0, b_phi=2, 
                nu_choice=seq(.5, 2, len=4),
                B=2000, burn=1000, print_every=0) {
 
