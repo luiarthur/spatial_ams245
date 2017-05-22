@@ -114,7 +114,7 @@ out <- gp(y, X, s, burn_cov * .01,
           nu_choice=2.5, #seq(.5, 2.5, by=1),
           b_tau = mean(burn[, 4]),
           b_sig = mean(burn[, 5]),
-          B=1000, burn=10000, print_every=10)
+          B=2000, burn=10000, print_every=10)
 plotPosts(out[, 1:3])
 plotPosts(out[, 4:6])
 
