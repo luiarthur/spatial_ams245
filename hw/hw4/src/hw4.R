@@ -70,28 +70,32 @@ my.pairs(new_vars)
 #dev.off()
 
 #### TEST ####
+### Rscala
 #devtools::install_github("luiarthur/spatial_ams245/spatialScala")
 #library(spatialScala)
 #
 #y <- ca$Arithmetic.Mean
 #X <- vars[,-1]
 #out <- GP(y,X,s,diag(4), 2, 1, 2, 1, 0,2, 1.5, 2.5, 1000, 300)
-library(Rcpp)
-Sys.setenv("PKG_CXXFLAGS"="-std=c++11")
-sourceCpp("GP/gp.cpp")
+
+### RCPP
+#library(Rcpp)
+#Sys.setenv("PKG_CXXFLAGS"="-std=c++11")
+#sourceCpp("GP/gp.cpp")
+##
+#y <- ca$Arithmetic.Mean
+#X <- vars[,-1]
+#out <- fit(y, X, s, diag(4), 
+#           init_beta=rep(0,ncol(X)),
+#           a_tau=2, b_tau=1, init_tau2=1,
+#           a_sig=2, b_sig=1, init_sig2=1,
+#           a_phi=0, b_phi=2, init_phi=.5,
+#           a_nu=1.5, b_nu=2.5, init_nu=2, 
+#           B=1000, burn=300, printEvery=10)
 #
-y <- ca$Arithmetic.Mean
-X <- vars[,-1]
-out <- fit(y, X, s, diag(4), 
-           init_beta=rep(0,ncol(X)),
-           a_tau=2, b_tau=1, init_tau2=1,
-           a_sig=2, b_sig=1, init_sig2=1,
-           a_phi=0, b_phi=2, init_phi=.5,
-           a_nu=1.5, b_nu=2.5, init_nu=2, 
-           B=1000, burn=300, printEvery=10)
 
+### R
 source("GP_R/gp.R", chdir=TRUE)
-
 y <- ca$Arithmetic.Mean * 1000
 X <- cbind(1, new_vars[, c("Lon", "log(Elevation)")])
 
