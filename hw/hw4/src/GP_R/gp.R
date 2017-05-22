@@ -35,7 +35,7 @@ gp <- function(y, X, s,
     out <- state
 
     # update beta
-    R <- geoR::matern(D, out$phi, out$nu)
+    R <- matern(D, out$phi, out$nu)
     V <- out$tau2 * I_n + out$sig2 * R
     Vi <- solve(V)
     XtVi <- Xt %*% Vi
@@ -49,7 +49,7 @@ gp <- function(y, X, s,
                  exp(trans_param[2]),
                  inv_logit(trans_param[3], a_phi, b_phi))
 
-      R <- geoR::matern(D, param[3], out$nu)
+      R <- matern(D, param[3], out$nu)
       V <- param[1] * I_n + param[2] * R
       
       ldmvnorm(y, X %*% out$beta, V)
