@@ -76,25 +76,34 @@ my.pairs(new_vars)
 #y <- ca$Arithmetic.Mean
 #X <- vars[,-1]
 #out <- GP(y,X,s,diag(4), 2, 1, 2, 1, 0,2, 1.5, 2.5, 1000, 300)
-#library(Rcpp)
-#Sys.setenv("PKG_CXXFLAGS"="-std=c++11")
-#sourceCpp("GP/gp.cpp")
+library(Rcpp)
+Sys.setenv("PKG_CXXFLAGS"="-std=c++11")
+sourceCpp("GP/gp.cpp")
 #
-#y <- ca$Arithmetic.Mean
-#X <- vars[,-1]
-#out <- fit(y, X, s, diag(4), 2, 1, 2, 1, 0, 2, 1.5, 2.5, 1000, 300, 0)
+y <- ca$Arithmetic.Mean
+X <- vars[,-1]
+out <- fit(y, X, s, diag(4), 
+           init_beta=rep(0,ncol(X)),
+           a_tau=2, b_tau=1, init_tau2=1,
+           a_sig=2, b_sig=1, init_sig2=1,
+           a_phi=0, b_phi=2, init_phi=.5,
+           a_nu=1.5, b_nu=2.5, init_nu=2, 
+           B=1000, burn=300, printEvery=10)
 
 source("GP_R/gp.R", chdir=TRUE)
 
 y <- ca$Arithmetic.Mean * 1000
 X <- cbind(1, new_vars[, c("Lon", "log(Elevation)")])
 
-burn <- gp(y, X, s, diag(3), B=1000, burn=1000, print_every=10)
+burn <- gp(y, X, s, diag(3), 
+           nu_choice=seq(.5, 2.5, by=.5),
+           B=1000, burn=1000, print_every=10)
 plotPosts(burn[, 1:3])
 plotPosts(burn[, -c(1:3)])
 burn_cov <- cov(burn[, 4:6])
 
 out <- gp(y, X, s, burn_cov * .01, 
+          nu_choice=seq(.5, 2.5, by=.5),
           b_tau = mean(burn[, 4]),
           b_sig = mean(burn[, 5]),
           B=2000, burn=10000, print_every=10)
@@ -103,4 +112,4 @@ plotPosts(out[, 4:6])
 
 nrow(unique(out[, -c(1:3)])) / nrow(out)
 plot(table(out[, 7]) / sum(out[,7]), pch=20, type='p', cex=5, col='steelblue',
-     ylim=0:1, xlim=c(.5,2))
+     ylim=0:1, xlim=range(out[,7]))

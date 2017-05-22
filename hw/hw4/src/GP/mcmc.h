@@ -30,12 +30,14 @@ void gibbs(S state,
   if (print_every > 0) { Rcout << std::endl; }
 }
 
-double logit(double p) {
-  return log(p / (1 - p));
+double logit(double p, double a, double b) {
+  return log((p - a) / (b - p));
 }
 
-double inv_logit(double x) {
-  return 1 / (1 + exp(-x));
+double inv_logit(double x, double a, double b) {
+  const double u = exp(-x);
+  //return (b * exp(x) + a) / (1 + exp(x));
+  return (b + a * u) / (1 + u);
 }
 
 
@@ -55,12 +57,14 @@ int wsample_index(double p[], int n) { // GOOD
   return i-1;
 }
 
+arma::vec rmvnorm(arma::vec m, arma::mat S) {
+  int n = m.n_rows;
+  arma::mat e = arma::randn(n);
+  return arma::vectorise(m + arma::chol(S).t() * e);
+}
+
+
 namespace metropolis {
-  arma::vec rmvnorm(arma::vec m, arma::mat S) {
-    int n = m.n_rows;
-    arma::mat e = arma::randn(n);
-    return arma::vectorise(m + arma::chol(S).t() * e);
-  }
 
   // Uniariate Metropolis step with Normal proposal
   double uni(double curr, std::function<double(double)> ll, 
@@ -102,28 +106,28 @@ namespace metropolis {
     return lp_gamma(x, shape, rate) + shape * log(rate) - lgamma(shape);
   }
 
-  double lp_igamma(double x, double a, double bNumer) {
+  double lp_invgamma(double x, double a, double bNumer) {
     return -(a + 1) * log(x) - bNumer / x;
   }
 
-  double lp_igamma_with_const(double x, double a, double bNumer) {
-    return lp_igamma(x, a, bNumer) + a * log(bNumer) - lgamma(a);
+  double lp_invgamma_with_const(double x, double a, double bNumer) {
+    return lp_invgamma(x, a, bNumer) + a * log(bNumer) - lgamma(a);
   }
 
   double lp_log_gamma(double log_x, double shape, double rate) {
     return lp_gamma(exp(log_x), shape, rate) + log_x;
   }
 
-  double lp_log_igamma(double log_x, double a, double bNumer) {
-    return lp_igamma(exp(log_x), a, bNumer) + log_x;
+  double lp_log_invgamma(double log_x, double a, double bNumer) {
+    return lp_invgamma(exp(log_x), a, bNumer) + log_x;
   }
 
   double lp_log_gamma_with_const(double log_x, double shape, double rate) {
     return lp_gamma_with_const(exp(log_x), shape, rate) + log_x;
   }
 
-  double lp_log_igamma_with_const(double log_x, double a, double bNumer) {
-    return lp_igamma_with_const(exp(log_x), a, bNumer) + log_x;
+  double lp_log_invgamma_with_const(double log_x, double a, double bNumer) {
+    return lp_invgamma_with_const(exp(log_x), a, bNumer) + log_x;
   }
 
   double lp_logit_unif(double logit_u) {
