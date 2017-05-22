@@ -53,7 +53,8 @@ logit <- function(p, a, b) {
 }
 
 inv_logit <- function(x, a, b) {
-  (b * exp(x) + a) / (1 + exp(x)) 
+  #(b * exp(x) + a) / (1 + exp(x)) 
+  (b  + a * exp(-x)) / (exp(-x) + 1) 
 }
 
 log_den_logx_2param <- function(log_den) {

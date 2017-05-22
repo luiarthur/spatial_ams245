@@ -100,14 +100,14 @@ y <- ca$Arithmetic.Mean * 1000
 X <- cbind(1, new_vars[, c("Lon", "log(Elevation)")])
 
 burn <- gp(y, X, s, diag(3), 
-           nu_choice=seq(.5, 2.5, by=.5),
+           nu_choice=seq(.5, 2.5, by=1),
            B=1000, burn=1000, print_every=10)
 plotPosts(burn[, 1:3])
 plotPosts(burn[, -c(1:3)])
 burn_cov <- cov(burn[, 4:6])
 
 out <- gp(y, X, s, burn_cov * .01, 
-          nu_choice=seq(.5, 2.5, by=.5),
+          nu_choice=seq(.5, 2.5, by=1),
           b_tau = mean(burn[, 4]),
           b_sig = mean(burn[, 5]),
           B=2000, burn=10000, print_every=10)
@@ -115,5 +115,5 @@ plotPosts(out[, 1:3])
 plotPosts(out[, 4:6])
 
 nrow(unique(out[, -c(1:3)])) / nrow(out)
-plot(table(out[, 7]) / sum(out[,7]), pch=20, type='p', cex=5, col='steelblue',
-     ylim=0:1, xlim=range(out[,7]))
+plot(table(out[, 7]) / length(out[,7]), pch=20, type='p', cex=5, 
+     col='steelblue', ylim=0:1, xlim=range(out[,7]))

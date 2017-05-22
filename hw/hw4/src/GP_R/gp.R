@@ -83,7 +83,7 @@ gp <- function(y, X, s,
   }
 
   init <- list(beta=double(k),
-               tau2=1, sig2=1, 
+               tau2=b_tau, sig2=b_sig, 
                phi= (a_phi + b_phi) / 2,
                nu= sample(nu_choice, 1))
                #nu = (a_nu + b_nu) / 2)
