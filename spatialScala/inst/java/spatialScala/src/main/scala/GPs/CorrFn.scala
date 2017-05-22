@@ -12,7 +12,6 @@ object CorrFn {
    * */
   def besselJ(x: Double, nu: Double): Double = BesselJ.value(nu, x)
 
-
   // d:    distance
   // phi:  range
   // nu:   smoothness
@@ -23,4 +22,15 @@ object CorrFn {
 
     exp(logR)
   }
+
+  trait Generic {
+    def f(d: Double): Double
+  }
+
+  case class Matern(var phi: Double = 0, var nu: Double = 0) extends Generic {
+    def f(d: Double):Double = {
+      matern(d, phi, nu)
+    }
+  }
+
 }

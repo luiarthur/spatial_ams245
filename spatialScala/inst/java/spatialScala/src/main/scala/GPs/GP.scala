@@ -22,16 +22,18 @@ object GP {
     nu: Double    // smoothness
   )
 
-  def fitMatern(y: DenseVector[Double],// Observations (Univariate)
-          X: DenseMatrix[Double], // Covariates
-          s: DenseMatrix[Double], // Locations
-          stepSigCov: DenseMatrix[Double] = 
-            DenseMatrix.eye[Double](4),
-          aTau: Double=2, bTau: Double=1,
-          aSig: Double=2, bSig: Double=1,
-          aPhi: Double=0, bPhi: Double=1,
-          aNu: Double=1.5, bNu: Double=2.5,
-          B: Int, burn: Int, printEvery: Int = 0) {
+  def fitMatern[CF <: CorrFn.Generic](
+    y: DenseVector[Double],// Observations (Univariate)
+    X: DenseMatrix[Double], // Covariates
+    s: DenseMatrix[Double], // Locations
+    stepSigCov: DenseMatrix[Double] = 
+      DenseMatrix.eye[Double](4),
+    aTau: Double=2, bTau: Double=1,
+    aSig: Double=2, bSig: Double=1,
+    aPhi: Double=0, bPhi: Double=1,
+    aNu: Double=1.5, bNu: Double=2.5,
+    corr: CF = CorrFn.Matern(),
+    B: Int, burn: Int, printEvery: Int = 0) {
 
     val (n,k) = (X.rows, X.cols)
     require(y.length == n && s.rows == n)
