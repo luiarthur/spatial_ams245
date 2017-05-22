@@ -24,6 +24,7 @@ gp <- function(y, X, s,
   n <- nrow(X)
   k <- ncol(X)
   p <- 3
+  nu_n <- length(nu_choice)
   Xt <- t(X)
   stopifnot(n == length(y) && n == NROW(s))
 
@@ -34,7 +35,7 @@ gp <- function(y, X, s,
     out <- state
 
     # update beta
-    R <- matern(d=D, phi=out$phi, nu=out$nu)
+    R <- geoR::matern(D, out$phi, out$nu)
     V <- out$tau2 * I_n + out$sig2 * R
     Vi <- solve(V)
     XtVi <- Xt %*% Vi
@@ -48,7 +49,7 @@ gp <- function(y, X, s,
                  exp(trans_param[2]),
                  inv_logit(trans_param[3], a_phi, b_phi))
 
-      R <- matern(d=D, phi=param[3], nu=out$nu)
+      R <- geoR::matern(D, param[3], out$nu)
       V <- param[1] * I_n + param[2] * R
       
       ldmvnorm(y, X %*% out$beta, V)
@@ -75,9 +76,13 @@ gp <- function(y, X, s,
       ldmvnorm(y, X %*% out$beta, V)
     }
 
-    log_prob <- sapply(nu_choice, ll_nu)
-    prob <- exp(log_prob - max(log_prob))
-    out$nu <- sample(nu_choice, 1, prob=prob)
+    out$nu <- if (nu_n > 1) {
+      log_prob <- sapply(nu_choice, ll_nu)
+      prob <- exp(log_prob - max(log_prob))
+      sample(nu_choice, 1, prob=prob)
+    } else {
+      out$nu
+    }
 
     out
   }
@@ -85,7 +90,7 @@ gp <- function(y, X, s,
   init <- list(beta=double(k),
                tau2=b_tau, sig2=b_sig, 
                phi= (a_phi + b_phi) / 2,
-               nu= sample(nu_choice, 1))
+               nu= nu_choice[1])
                #nu = (a_nu + b_nu) / 2)
 
   gibbs_out <- gibbs(init, update, B, burn, print_every)

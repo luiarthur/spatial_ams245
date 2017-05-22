@@ -5,7 +5,8 @@
 
 library(rcommon)
 library(sqldf)
-library(maps)
+library(fields) # quilt.plot
+library(maps)   # map
 source("../../hw3/src/plotPerCounty.R")
 
 ### Entire Data ###
@@ -99,18 +100,21 @@ source("GP_R/gp.R", chdir=TRUE)
 y <- ca$Arithmetic.Mean * 1000
 X <- cbind(1, new_vars[, c("Lon", "log(Elevation)")])
 
+map('county', 'california')
+quilt.plot(ca$Lon, ca$Lat, y, add=TRUE)
+
 burn <- gp(y, X, s, diag(3), 
-           nu_choice=seq(.5, 2.5, by=1),
+           nu_choice=2.5,  #seq(.5, 2.5, by=1),
            B=1000, burn=1000, print_every=10)
 plotPosts(burn[, 1:3])
 plotPosts(burn[, -c(1:3)])
 burn_cov <- cov(burn[, 4:6])
 
 out <- gp(y, X, s, burn_cov * .01, 
-          nu_choice=seq(.5, 2.5, by=1),
+          nu_choice=2.5, #seq(.5, 2.5, by=1),
           b_tau = mean(burn[, 4]),
           b_sig = mean(burn[, 5]),
-          B=2000, burn=10000, print_every=10)
+          B=1000, burn=10000, print_every=10)
 plotPosts(out[, 1:3])
 plotPosts(out[, 4:6])
 
