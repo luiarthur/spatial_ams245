@@ -34,15 +34,6 @@ gp <- function(y, X, s,
   update <- function(state) {
     out <- state
 
-    # update beta
-    R <- matern(D, out$phi, out$nu)
-    V <- out$tau2 * I_n + out$sig2 * R
-    Vi <- solve(V)
-    XtVi <- Xt %*% Vi
-    Sig_hat <- solve(XtVi %*% X) ### Make sure this is right
-    beta_hat <- Sig_hat %*% XtVi %*% y
-    out$beta <- mvrnorm(beta_hat, Sig_hat)
-
     # update tau2, sig2, phi
     ll <- function(trans_param) {
       param <- c(exp(trans_param[1]), 
@@ -75,14 +66,20 @@ gp <- function(y, X, s,
       V <- out$tau2 * I_n + out$sig2 * R
       ldmvnorm(y, X %*% out$beta, V)
     }
-
-    out$nu <- if (nu_n > 1) {
+    if (nu_n > 1) {
       log_prob <- sapply(nu_choice, ll_nu)
       prob <- exp(log_prob - max(log_prob))
-      sample(nu_choice, 1, prob=prob)
-    } else {
-      out$nu
+      out$nu <- sample(nu_choice, 1, prob=prob)
     }
+
+    # update beta
+    R <- matern(D, out$phi, out$nu)
+    V <- out$tau2 * I_n + out$sig2 * R
+    Vi <- solve(V)
+    XtVi <- Xt %*% Vi
+    Sig_hat <- solve(XtVi %*% X)
+    beta_hat <- Sig_hat %*% XtVi %*% y
+    out$beta <- mvrnorm(beta_hat, Sig_hat)
 
     out
   }
@@ -91,7 +88,6 @@ gp <- function(y, X, s,
                tau2=b_tau, sig2=b_sig, 
                phi= (a_phi + b_phi) / 2,
                nu= nu_choice[1])
-               #nu = (a_nu + b_nu) / 2)
 
   gibbs_out <- gibbs(init, update, B, burn, print_every)
   
@@ -107,4 +103,43 @@ gp <- function(y, X, s,
   t(out)
 }
 
+# post = matrix(beta, tau2, sig2, phi, nu)
+gp.predict <- function(y, X, s, X_new, s_new, post) {
+  n <- nrow(X)
+  k <- ncol(X)
+  m <- nrow(X_new)
+  I_n <- diag(n)
+  I_m <- diag(m)
+  X_all <- rbind(X_new, X)
 
+  stopifnot(n == length(y) && n == nrow(s))
+  stopifnot(m == nrow(s_new))
+  stopifnot(k == ncol(X_new))
+
+  D_all <- as.matrix(dist(rbind(s_new, s)))
+
+  pred <- function(state) {
+    beta <- state[1:k]
+    tau2 <- state[k + 1]
+    sig2 <- state[k + 2]
+    phi  <- state[k + 3]
+    nu   <- state[k + 4]
+    Xb <- X_all %*% beta
+
+    R_all <- matern(D_all, phi, nu)
+    R_new <- R_all[1:m, 1:m]
+    R_old <- R_all[-c(1:m), -c(1:m)]
+    R_new_old <- R_all[1:m, -c(1:m)]
+
+    V_new <- tau2 * I_m + sig2 * R_new
+    V_old <- tau2 * I_n + sig2 * R_old
+
+    S <- R_new_old %*% solve(V_old)
+    EY <- Xb[1:m] + S %*% (y - Xb[-c(1:m)])
+    VY <- R_new - S %*% t(R_new_old)
+
+    mvrnorm(EY, VY)
+  }
+
+  apply(post, 1, pred)
+}

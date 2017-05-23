@@ -3,6 +3,8 @@
 # Lat: y-axis
 # Lon: x-axis
 
+'%btwn%' <- function(x,y) x >= y[1] & x <= y[2]
+
 library(rcommon)
 library(sqldf)
 library(fields) # quilt.plot
@@ -128,10 +130,30 @@ out <- gp(y, X, s, burn_cov * .01,
           nu_choice=seq(.5, 2.5, by=1),
           b_tau = mean(burn[, 4]),
           b_sig = mean(burn[, 5]),
-          B=2000, burn=10000, print_every=10)
+          B=2000, burn=3000, print_every=10)
 plotPosts(out[, 1:3])
 plotPosts(out[, 4:6])
 
 nrow(unique(out[, -c(1:3)])) / nrow(out)
 plot(table(out[, 7]) / length(out[,7]), pch=20, type='p', cex=5, 
      col='steelblue', ylim=0:1, xlim=range(out[,7]))
+
+source("GP_R/gp.R", chdir=T)
+system.time(pred <- gp.predict(y, X, s, X, s, out))
+
+pred.mean <- apply(pred, 1, mean)
+pred.ci <- apply(pred, 1, quantile, c(.025, .975))
+
+par(mfrow=c(1,2))
+map('county', 'california')
+quilt.plot(ca$Lon, ca$Lat, y, add=TRUE)
+map('county', 'california')
+quilt.plot(ca$Lon, ca$Lat, pred.mean, add=TRUE)
+par(mfrow=c(1,1))
+
+plot(y, pred.mean, pch=20, col='grey30', bty='n',
+     ylim=range(post.ci), xlim=range(post.ci))
+add.errbar(ci=t(pred.ci), x=y, col='grey30')
+abline(a=0, b=1, col='grey30', lty=2)
+
+coverage <- mean(sapply(1:length(y), function(i) y[i] %btwn% pred.ci[,i]))
