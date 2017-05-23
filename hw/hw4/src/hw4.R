@@ -101,6 +101,7 @@ my.pairs(new_vars)
 source("GP_R/gp.R", chdir=TRUE)
 y <- ca$Arithmetic.Mean * 1000
 X <- cbind(1, new_vars[, c("Lon", "log(Elevation)")])
+#X <- cbind(1, new_vars[, "log(Elevation)"])
 
 map('county', 'california')
 quilt.plot(ca$Lon, ca$Lat, y, add=TRUE)
@@ -119,26 +120,30 @@ quilt.plot(ca$Lon, ca$Lat, y, add=TRUE)
 #plotPosts(test[, 1:4])
 #table(test[,5]) / nrow(test)
 
-burn <- gp(y, X, s, diag(3), 
-           nu_choice=seq(.5, 2.5, by=1),
-           B=1000, burn=3000, print_every=10)
-plotPosts(burn[, 1:3])
-plotPosts(burn[, -c(1:3)])
-burn_cov <- cov(burn[, 4:6])
+source("GP_R/gp.R", chdir=TRUE)
+system.time(
+burn <- gp(y, X, s, 
+           a_z=0, b_z=3, 
+           B=1000, burn=2000, print_every=100)
+)
+plotPosts(burn[, 1:ncol(X)])
+plotPosts(burn[, c('phi','tau2','sig2', 'z')])
+nrow(unique(burn)) / nrow(burn)
+table(burn[,'nu']) / nrow(burn)
 
-out <- gp(y, X, s, burn_cov * .01, 
-          nu_choice=seq(.5, 2.5, by=1),
-          b_tau = mean(burn[, 4]),
-          b_sig = mean(burn[, 5]),
-          B=2000, burn=3000, print_every=10)
-plotPosts(out[, 1:3])
-plotPosts(out[, 4:6])
+system.time(
+out <- gp(y, X, s, 
+          stepSigPsi=cov(burn[,c('gam2','phi','z')]) * 10,
+          a_tau=100, b_tau=300,
+          a_tau=30, b_tau=10,
+          a_z=0, b_z=3,
+          B=1000, burn=2000, print_every=100)
+)
+plotPosts(out[, 1:ncol(X)])
+plotPosts(out[, c('phi','tau2','sig2', 'z')])
+nrow(unique(out)) / nrow(out)
 
-nrow(unique(out[, -c(1:3)])) / nrow(out)
-plot(table(out[, 7]) / length(out[,7]), pch=20, type='p', cex=5, 
-     col='steelblue', ylim=0:1, xlim=range(out[,7]))
-
-source("GP_R/gp.R", chdir=T)
+### Predict / Krig
 system.time(pred <- gp.predict(y, X, s, X, s, out))
 
 pred.mean <- apply(pred, 1, mean)
@@ -151,10 +156,13 @@ map('county', 'california')
 quilt.plot(ca$Lon, ca$Lat, pred.mean, add=TRUE)
 par(mfrow=c(1,1))
 
-plot(y, pred.mean, pch=20, col='grey30', bty='n',
-     ylim=range(post.ci), xlim=range(post.ci))
+coverage <- mean(sapply(1:length(y), function(i) y[i] %btwn% pred.ci[,i]))
+
+plot(y, pred.mean, pch=20, col='grey30', fg='grey',
+     ylim=range(post.ci), xlim=range(post.ci),
+     xlab='Observed Values', ylab='Predicted Values',
+     main='Predicted (mean and 95% CI) vs Observed')
 add.errbar(ci=t(pred.ci), x=y, col='grey30')
 abline(a=0, b=1, col='grey30', lty=2)
-
-coverage <- mean(sapply(1:length(y), function(i) y[i] %btwn% pred.ci[,i]))
-coverage
+legend('bottomright', legend=paste0('Coverage = ', round(coverage,2)),
+       bty='n', cex=2, text.col='grey30')

@@ -13,93 +13,121 @@ matern <- function(d, phi, nu) {
   exp(logR)
 }
 
+
 gp <- function(y, X, s, 
-               stepSigCov,
+               stepSigPsi=diag(3),
                a_tau=2, b_tau=1, 
-               a_sig=2, b_sig=1, 
+               a_gam=2, b_gam=1, # tau2 / sig2
                a_phi=0, b_phi=2, 
-               nu_choice=seq(.5, 2, len=4),
+               a_z=0, b_z=3,
                B=2000, burn=1000, print_every=0) {
 
-  n <- nrow(X)
-  k <- ncol(X)
-  p <- 3
-  nu_n <- length(nu_choice)
+  n <- NROW(X)
+  k <- NCOL(X)
+  psi_dim <- 3 # gam2, phi, z
   Xt <- t(X)
   stopifnot(n == length(y) && n == NROW(s))
+  stopifnot(a_z >= 0 && b_z > a_z)
+
+  nu_z <- function(z) {
+    stopifnot(z >= a_z && z <= b_z) # this should never happen
+    floor(z) + 1/2
+  }
 
   D <- as.matrix(dist(s))
   I_n <- diag(n)
 
+  compute_ll <- TRUE
+
   update <- function(state) {
     out <- state
 
-    # update tau2, sig2, phi
-    ll <- function(trans_param) {
-      param <- c(exp(trans_param[1]), 
-                 exp(trans_param[2]),
-                 inv_logit(trans_param[3], a_phi, b_phi))
+    # update (gam2, phi, z), beta, tau2
+    ll <- function(trans_psi) {
+      gam2 <- exp(trans_psi[1])
+      phi <- inv_logit(trans_psi[2], a_phi, b_phi)
+      z <- inv_logit(trans_psi[3], a_z, b_z)
+      nu <- nu_z(z)
 
-      R <- matern(D, param[3], out$nu)
-      V <- param[1] * I_n + param[2] * R
-      
-      ldmvnorm(y, X %*% out$beta, V)
+      R <- matern(D, phi, nu)
+      V <- I_n + R / gam2
+      Vi <- solve(V)
+      XtVi <- Xt %*% Vi
+      XtViX_i <- solve(XtVi %*% X)
+      beta_hat <- XtViX_i %*% XtVi %*% y # notice: tau2 cancels
+      m <- y - X %*% beta_hat
+      S_psi <- t(m) %*% Vi %*% m 
+
+      val <- -.5 * (log_det(V)) + .5 * log_det(XtViX_i) - 
+             ((n-k) / 2 + a_tau) * log(S_psi / 2 + b_tau)
+
+      list(val=val, beta_hat=beta_hat, S_psi=S_psi, XtViX_i=XtViX_i)
     }
 
-    lp <- function(trans_param) {
-      lp_log_invgamma(trans_param[1], a_tau, b_tau) +
-      lp_log_invgamma(trans_param[2], a_sig, b_sig) +
-      lp_logit_unif(trans_param[3])
+    lp <- function(trans_psi) {
+      lp_log_invgamma(trans_psi[1], a_gam, b_gam) + # gam2
+      lp_logit_unif(trans_psi[2]) +  # phi
+      lp_logit_unif(trans_psi[3])    # z
     }
 
-    trans_curr_cov_param <- c(log(out$tau2), log(out$sig2), 
-                              logit(out$phi, a_phi, b_phi))
+    trans_curr_psi <- c(log(out$gam2), 
+                        logit(out$phi, a_phi, b_phi),
+                        logit(out$z, a_z, b_z))
 
-    mh_trans <- mh_mv(trans_curr_cov_param, ll, lp, stepSigCov)
-    out$tau2 <- exp(mh_trans[1])
-    out$sig2 <- exp(mh_trans[2])
-    out$phi <- inv_logit(mh_trans[3], a_phi, b_phi)
+    ### Metropolis
+    cand <- mvrnorm(trans_curr_psi, stepSigPsi)
+    ll_cand_all <- ll(cand)
+    ll_cand <- ll_cand_all$val
+    ll_curr_all <- if(compute_ll) {
+      compute_ll <<- FALSE
+      ll(trans_curr_psi) 
+    } else ll_old_all
 
-    # Update nu
-    ll_nu <- function(nu) {
-      R <- matern(d=D, phi=out$phi, nu=nu)
-      V <- out$tau2 * I_n + out$sig2 * R
-      ldmvnorm(y, X %*% out$beta, V)
+    ll_curr <- ll_curr_all$val
+
+    ### Compute Acceptance Ratio
+    if (ll_cand + lp(cand) - 
+        ll_curr - lp(trans_curr_psi) > log(runif(1))) {
+
+      out$gam2 <- exp(cand[1])
+      out$phi <- inv_logit(cand[2], a_phi, b_phi)
+      out$z <- inv_logit(cand[3], a_z, b_z)
+
+      # update tau2
+      out$tau2 <- 1 / rgamma(1, (n-k) / 2 + a_tau,
+                             ll_cand_all$S_psi / 2 + b_tau)
+
+      # update beta
+      out$beta <- mvrnorm(ll_cand_all$beta_hat, 
+                          ll_cand_all$XtViX_i * out$tau2)
+
+      ll_old_all <<- ll_cand_all
     }
-    if (nu_n > 1) {
-      log_prob <- sapply(nu_choice, ll_nu)
-      prob <- exp(log_prob - max(log_prob))
-      out$nu <- sample(nu_choice, 1, prob=prob)
-    }
 
-    # update beta
-    R <- matern(D, out$phi, out$nu)
-    V <- out$tau2 * I_n + out$sig2 * R
-    Vi <- solve(V)
-    XtVi <- Xt %*% Vi
-    Sig_hat <- solve(XtVi %*% X)
-    beta_hat <- Sig_hat %*% XtVi %*% y
-    out$beta <- mvrnorm(beta_hat, Sig_hat)
 
     out
   }
 
   init <- list(beta=double(k),
-               tau2=b_tau, sig2=b_sig, 
+               tau2=b_tau, 
+               gam2=b_gam, 
                phi= (a_phi + b_phi) / 2,
-               nu= nu_choice[1])
+               z=(a_z + b_z) / 2)
 
   gibbs_out <- gibbs(init, update, B, burn, print_every)
   
-  out <- matrix(NA, p + k + 1, B) 
+  out <- matrix(NA, psi_dim + k + 1 + 2, B) 
 
   out[1:k, ] <- sapply(gibbs_out, function(x) x$beta)
-  out[k+1,] <- sapply(gibbs_out, function(x) x$tau2)
-  out[k+2,] <- sapply(gibbs_out, function(x) x$sig2)
-  out[k+3,] <- sapply(gibbs_out, function(x) x$phi)
-  out[k+4,] <- sapply(gibbs_out, function(x) x$nu)
+  out[k+1,] <- sapply(gibbs_out, function(x) x$gam2)
+  out[k+2,] <- sapply(gibbs_out, function(x) x$phi)
+  out[k+3,] <- sapply(gibbs_out, function(x) x$z)
+  out[k+4,] <- sapply(gibbs_out, function(x) x$tau2)
+  out[k+5,] <- sapply(gibbs_out, function(x) nu_z(x$z))
+  out[k+6,] <- sapply(gibbs_out, function(x) x$tau2 / x$gam2)
 
-  rownames(out) <- c(paste0('beta',1:k), 'tau2', 'sig2', 'phi', 'nu')
+  rownames(out) <- c(paste0('beta',1:k), 
+                     'gam2', 'phi', 'z', 'tau2', 'nu', 'sig2')
   t(out)
 }
 
@@ -110,6 +138,7 @@ gp.predict <- function(y, X, s, X_new, s_new, post) {
   m <- nrow(X_new)
   I_n <- diag(n)
   I_m <- diag(m)
+  I_all <- diag(n+m)
   X_all <- rbind(X_new, X)
 
   stopifnot(n == length(y) && n == nrow(s))
@@ -120,23 +149,21 @@ gp.predict <- function(y, X, s, X_new, s_new, post) {
 
   pred <- function(state) {
     beta <- state[1:k]
-    tau2 <- state[k + 1]
-    sig2 <- state[k + 2]
-    phi  <- state[k + 3]
-    nu   <- state[k + 4]
+    tau2 <- state['tau2']
+    sig2 <- state['sig2']
+    phi  <- state['phi']
+    nu   <- state['nu']
     Xb <- X_all %*% beta
 
     R_all <- matern(D_all, phi, nu)
-    R_new <- R_all[1:m, 1:m]
-    R_old <- R_all[-c(1:m), -c(1:m)]
-    R_new_old <- R_all[1:m, -c(1:m)]
+    V_all <- tau2 * I_all + sig2 * R_all
+    V_new <- V_all[1:m, 1:m]
+    V_old <- V_all[-c(1:m), -c(1:m)]
+    V_new_old <- V_all[1:m, -c(1:m)]
 
-    V_new <- tau2 * I_m + sig2 * R_new
-    V_old <- tau2 * I_n + sig2 * R_old
-
-    S <- R_new_old %*% solve(V_old)
+    S <- V_new_old %*% solve(V_old)
     EY <- Xb[1:m] + S %*% (y - Xb[-c(1:m)])
-    VY <- R_new - S %*% t(R_new_old)
+    VY <- V_new - S %*% t(V_new_old)
 
     mvrnorm(EY, VY)
   }
