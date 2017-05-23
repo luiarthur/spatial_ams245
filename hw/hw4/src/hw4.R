@@ -157,3 +157,4 @@ add.errbar(ci=t(pred.ci), x=y, col='grey30')
 abline(a=0, b=1, col='grey30', lty=2)
 
 coverage <- mean(sapply(1:length(y), function(i) y[i] %btwn% pred.ci[,i]))
+coverage
