@@ -121,7 +121,7 @@ quilt.plot(ca$Lon, ca$Lat, y, add=TRUE)
 
 burn <- gp(y, X, s, diag(3), 
            nu_choice=seq(.5, 2.5, by=1),
-           B=1000, burn=1000, print_every=10)
+           B=1000, burn=3000, print_every=10)
 plotPosts(burn[, 1:3])
 plotPosts(burn[, -c(1:3)])
 burn_cov <- cov(burn[, 4:6])
