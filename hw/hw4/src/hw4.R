@@ -3,8 +3,6 @@
 # Lat: y-axis
 # Lon: x-axis
 
-'%btwn%' <- function(x,y) x >= y[1] & x <= y[2]
-
 library(rcommon)
 library(sqldf)
 library(fields) # quilt.plot
@@ -134,35 +132,38 @@ table(burn[,'nu']) / nrow(burn)
 system.time(
 out <- gp(y, X, s, 
           stepSigPsi=cov(burn[,c('gam2','phi','z')]) * 10,
-          a_tau=100, b_tau=300,
-          a_tau=30, b_tau=10,
           a_z=0, b_z=3,
-          B=1000, burn=2000, print_every=100)
+          B=1000, burn=4000, print_every=100)
 )
 plotPosts(out[, 1:ncol(X)])
 plotPosts(out[, c('phi','tau2','sig2', 'z')])
 nrow(unique(out)) / nrow(out)
+table(out[,'nu']) / nrow(out)
 
 ### Predict / Krig
+source("GP_R/gp.R", chdir=TRUE)
 system.time(pred <- gp.predict(y, X, s, X, s, out))
 
 pred.mean <- apply(pred, 1, mean)
 pred.ci <- apply(pred, 1, quantile, c(.025, .975))
 
-par(mfrow=c(1,2))
+par(mfrow=c(1,2), mar=mar.default())
 map('county', 'california')
 quilt.plot(ca$Lon, ca$Lat, y, add=TRUE)
 map('county', 'california')
 quilt.plot(ca$Lon, ca$Lat, pred.mean, add=TRUE)
-par(mfrow=c(1,1))
+par(mfrow=c(1,1), mar=mar.default())
+map('county', 'california')
+quilt.plot(ca$Lon, ca$Lat, apply(pred, 1, sd), add=TRUE)
 
 coverage <- mean(sapply(1:length(y), function(i) y[i] %btwn% pred.ci[,i]))
 
 plot(y, pred.mean, pch=20, col='grey30', fg='grey',
-     ylim=range(post.ci), xlim=range(post.ci),
+     ylim=range(pred.ci,y), xlim=range(pred.ci,y),
      xlab='Observed Values', ylab='Predicted Values',
      main='Predicted (mean and 95% CI) vs Observed')
 add.errbar(ci=t(pred.ci), x=y, col='grey30')
 abline(a=0, b=1, col='grey30', lty=2)
 legend('bottomright', legend=paste0('Coverage = ', round(coverage,2)),
        bty='n', cex=2, text.col='grey30')
+
