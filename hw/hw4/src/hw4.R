@@ -120,19 +120,18 @@ quilt.plot(ca$Lon, ca$Lat, y, add=TRUE)
 
 source("GP_R/gp.R", chdir=TRUE)
 system.time(
-burn <- gp(y, X, s, 
-           a_z=0, b_z=3, 
+burn <- gp(y, X, s, b_gam=1,
            B=1000, burn=2000, print_every=100)
 )
 plotPosts(burn[, 1:ncol(X)])
+plotPosts(burn[, c('phi','tau2','gam2', 'z')])
 plotPosts(burn[, c('phi','tau2','sig2', 'z')])
 nrow(unique(burn)) / nrow(burn)
 table(burn[,'nu']) / nrow(burn)
 
 system.time(
-out <- gp(y, X, s, 
+out <- gp(y, X, s, b_gam=1,
           stepSigPsi=cov(burn[,c('gam2','phi','z')]) * 10,
-          a_z=0, b_z=3,
           B=1000, burn=4000, print_every=100)
 )
 plotPosts(out[, 1:ncol(X)])
@@ -153,6 +152,7 @@ quilt.plot(ca$Lon, ca$Lat, y, add=TRUE)
 map('county', 'california')
 quilt.plot(ca$Lon, ca$Lat, pred.mean, add=TRUE)
 par(mfrow=c(1,1), mar=mar.default())
+
 map('county', 'california')
 quilt.plot(ca$Lon, ca$Lat, apply(pred, 1, sd), add=TRUE)
 
