@@ -154,9 +154,9 @@ z    &\sim \Unif(0, 3) \\
 where $\V_\psi = \I + \R/\gamma^2$ and $\psi = (\gamma^2, \phi, \kappa)$
 are the parameters that govern the covariance matrix $\V$. 
 Note that when $\tau^2 \sim \IG(a_\tau, b_\tau)$ and
-$\sigma^2 \sim \IG(a_\sigma, b_\sigma)$, the prior distribution for $\gamma^2$
-is $p(\gamma^2) \propto (\gamma^2)^{a_\sigma-1}(\gamma^2 b_\sigma + b_\tau)^{a_\tau +
-a_\sigma}$.
+$\sigma^2 \sim \IG(a_\sigma, b_\sigma)$, the prior distribution for $\gamma^2 = \tau^2 / \sigma^2$
+is $p(\gamma^2) \propto (\gamma^2)^{a_\sigma-1}(\gamma^2 b_\sigma + b_\tau)^{-(a_\tau +
+a_\sigma)}$.
 
 The priors for $\tau^2$ and $\sigma^2$ were chosen to have a prior mean of
 unity and prior infinite variance, to reflect objectivity and great
@@ -258,7 +258,7 @@ Figure \ref{resid} provides the residuals by location, computed as the posterior
 predictive mean minus the observed ozone level at each location. 
 No obvious trends can be observed in the residuals, indicating good model fit.
 
-![Residuals by locatoin.](img/resid.pdf){id='resid'}
+![Residuals by location.](img/resid.pdf){id='resid'}
 
 # Conclusions
 Modeling ozone levels with a Gaussian process Bayesian model containing a trend
