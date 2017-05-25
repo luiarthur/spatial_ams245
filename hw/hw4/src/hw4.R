@@ -3,6 +3,7 @@
 # Lat: y-axis
 # Lon: x-axis
 
+library(xtable)
 library(rcommon)
 library(sqldf)
 library(fields) # quilt.plot
@@ -49,26 +50,24 @@ county_means <- sqldf('
   GROUP BY `County.Name`
 ')
 
-#pdf('../tex/img/logCountyMeans.pdf')
-plot.per.county(log(county_means$cmean), 'california', county_means$cname, 
-                levels=7, measure='log county means', text.name=FALSE)
-#dev.off()
-
-
 ### Explore location vs altitude ###
+pdf('../tex/img/pairsRaw.pdf')
 vars <- cbind(ca$Arithmetic.Mean,
               ca$Lat, ca$Lon, ca$Elevation)
 colnames(vars) <- c('Mean', 'Lat', 'Lon', 'Elevation')
 my.pairs(vars)
+dev.off()
 
-#pdf('../tex/img/mypairs.pdf')
+pdf('../tex/img/mypairs.pdf')
 new_vars <- cbind(ca$Arithmetic.Mean, 
               ca$Lat,
               ca$Lon,
               log(ca$Elevation))
 colnames(new_vars) <- c('Mean', 'Lat', 'Lon', 'log(Elevation)')
 my.pairs(new_vars)
-#dev.off()
+dev.off()
+
+
 
 #### TEST ####
 ### Rscala
@@ -96,48 +95,50 @@ my.pairs(new_vars)
 #
 
 ### R
+set.seed(1)
 source("GP_R/gp.R", chdir=TRUE)
 y <- ca$Arithmetic.Mean * 1000
 X <- cbind(1, new_vars[, c("Lon", "log(Elevation)")])
-#X <- cbind(1, new_vars[, "log(Elevation)"])
+colnames(X) <- c("intercept", "Longitude", "Log Elevation")
 
+pdf('../tex/img/map.pdf')
 map('county', 'california')
 quilt.plot(ca$Lon, ca$Lat, y, add=TRUE)
+dev.off()
 
-#f <- function(x) x^2 + 10 
-#X.test <- matrix(1, 30)
-#x <- rnorm(length(X.test))
-#y.test <- as.numeric(f(x) + X.test)
-#plot(x,y.test)
-#test <- gp(y.test, X.test, x, diag(3), 
-#           a_sig=2, b_sig=10,
-#           nu_choice=2.5,
-#           B=1000, burn=3000, print_every=10)
-#nrow(unique(test[, c(2:4)])) / nrow(test)
-#cov(test[, 2:4])
-#plotPosts(test[, 1:4])
-#table(test[,5]) / nrow(test)
-
-source("GP_R/gp.R", chdir=TRUE)
 system.time(
-burn <- gp(y, X, s, b_gam=1,
+burn <- gp(y, X, s, b_sig=1,
            B=1000, burn=2000, print_every=100)
 )
-plotPosts(burn[, 1:ncol(X)])
-plotPosts(burn[, c('phi','tau2','gam2', 'z')])
-plotPosts(burn[, c('phi','tau2','sig2', 'z')])
-nrow(unique(burn)) / nrow(burn)
-table(burn[,'nu']) / nrow(burn)
+
+#plotPosts(burn[, 1:ncol(X)])
+#plotPosts(burn[, c('phi','tau2','gam2', 'z')])
+#plotPosts(burn[, c('phi','tau2','sig2', 'z')])
+#nrow(unique(burn)) / nrow(burn)
+#table(burn[,'nu']) / nrow(burn)
 
 system.time(
-out <- gp(y, X, s, b_gam=1,
+out <- gp(y, X, s, b_sig=1,
           stepSigPsi=cov(burn[,c('gam2','phi','z')]) * 10,
           B=1000, burn=4000, print_every=100)
 )
+
+colnames(out)[1:ncol(X)] <- colnames(X)
+pdf('../tex/img/beta.pdf')
 plotPosts(out[, 1:ncol(X)])
-plotPosts(out[, c('phi','tau2','sig2', 'z')])
+dev.off()
+
+pdf('../tex/img/psi.pdf')
+plotPosts(out[, c('phi','tau2','sig2')])
+dev.off()
+
 nrow(unique(out)) / nrow(out)
-table(out[,'nu']) / nrow(out)
+nu_mat <- t(table(out[,'nu']) / nrow(out))
+colnames(nu_mat) <- paste0("$\\kappa$=", colnames(nu_mat))
+rownames(nu_mat) <- "Posterior Probability"
+sink("../tex/img/kappa_mat.tex")
+print(xtable(nu_mat, digits=3), sanitize.text.function=identity)
+sink()
 
 ### Predict / Krig
 source("GP_R/gp.R", chdir=TRUE)
@@ -146,24 +147,25 @@ system.time(pred <- gp.predict(y, X, s, X, s, out))
 pred.mean <- apply(pred, 1, mean)
 pred.ci <- apply(pred, 1, quantile, c(.025, .975))
 
-par(mfrow=c(1,2), mar=mar.default())
-map('county', 'california')
-quilt.plot(ca$Lon, ca$Lat, y, add=TRUE)
-map('county', 'california')
-quilt.plot(ca$Lon, ca$Lat, pred.mean, add=TRUE)
-par(mfrow=c(1,1), mar=mar.default())
+#par(mfrow=c(1,2), mar=mar.default())
+#map('county', 'california')
+#quilt.plot(ca$Lon, ca$Lat, y, add=TRUE)
+#map('county', 'california')
+#quilt.plot(ca$Lon, ca$Lat, pred.mean, add=TRUE)
+#par(mfrow=c(1,1), mar=mar.default())
 
-map('county', 'california')
-quilt.plot(ca$Lon, ca$Lat, apply(pred, 1, sd), add=TRUE)
+#map('county', 'california')
+#quilt.plot(ca$Lon, ca$Lat, apply(pred, 1, sd), add=TRUE)
 
 coverage <- mean(sapply(1:length(y), function(i) y[i] %btwn% pred.ci[,i]))
 
+pdf('../tex/img/qq.pdf')
 plot(y, pred.mean, pch=20, col='grey30', fg='grey',
      ylim=range(pred.ci,y), xlim=range(pred.ci,y),
-     xlab='Observed Values', ylab='Predicted Values',
-     main='Predicted (mean and 95% CI) vs Observed')
-add.errbar(ci=t(pred.ci), x=y, col='grey30')
+     xlab='Observed Values', ylab='Predicted Values')
+#title(main='Predicted (mean and 95% CI) vs Observed')
+add.errbar(ci=t(pred.ci), x=y, col=rgb(0,0,0,.2))
 abline(a=0, b=1, col='grey30', lty=2)
 legend('bottomright', legend=paste0('Coverage = ', round(coverage,2)),
-       bty='n', cex=2, text.col='grey30')
-
+       bty='n', cex=2, text.col='grey50')
+dev.off()

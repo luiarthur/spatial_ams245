@@ -17,7 +17,7 @@ matern <- function(d, phi, nu) {
 gp <- function(y, X, s, 
                stepSigPsi=diag(3),
                a_tau=2, b_tau=1, 
-               a_gam=2, b_gam=1, # tau2 / sig2
+               a_sig=2, b_sig=1, # gam2 = tau2 / sig2
                a_phi=0, b_phi=2, 
                a_z=0, b_z=3,
                B=2000, burn=1000, print_every=0) {
@@ -70,7 +70,18 @@ gp <- function(y, X, s,
     }
 
     lp <- function(trans_psi) {
-      lp_log_invgamma(trans_psi[1], a_gam, b_gam) + # gam2
+      # this doesn't seem to work
+      #lp_log_invgamma(trans_psi[1], a_gam, b_gam) + # gam2
+      # gam2: transforming parameters
+      # let alpha2 = tau2, gam2 = tau2 / sig2
+      # find joint of alpha2, gam2 and integrate out alpha2
+      # the following is the density of log_gam2
+      # which is the log density of gam2 + log(gam2)
+      # = log(p_gam2(gam2)) + log(gam2)
+      gam2 <- exp(log_gam2 <- trans_psi[1])
+      log_gam2 + (a_sig-1) * log(gam2) + 
+      (a_sig + a_tau) * log(b_sig*gam2 + b_tau) + 
+      #
       lp_logit_unif(trans_psi[2]) +  # phi
       lp_logit_unif(trans_psi[3])    # z
     }
@@ -117,7 +128,7 @@ gp <- function(y, X, s,
 
   init <- list(beta=double(k),
                tau2=b_tau, 
-               gam2=b_gam, 
+               gam2=b_sig, 
                phi= (a_phi + b_phi) / 2,
                z=(a_z + b_z) / 2)
 
