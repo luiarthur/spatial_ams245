@@ -79,10 +79,6 @@ gp <- function(y, X, s,
       # which is the log density of gam2 + log(gam2)
       # = log(p_gam2(gam2)) + log(gam2)
       gam2 <- exp(log_gam2 <- trans_psi[1])
-      # wrong but works
-      #log_gam2 + (a_sig-1) * log(gam2) + 
-      #(a_sig + a_tau) * log(b_sig*gam2 + b_tau) + 
-      # right but doesn't work as well
       log_gam2 + (a_sig-1) * log(gam2) - 
       (a_sig + a_tau) * log(b_sig*gam2 + b_tau) + 
       lp_logit_unif(trans_psi[2]) +  # phi
