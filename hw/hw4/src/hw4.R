@@ -13,6 +13,7 @@ source("../../hw3/src/plotPerCounty.R")
 ### Entire Data ###
 dat <- read.csv('../../hw3/dat/annual_all_2015.csv')
 site <- read.csv('../../hw3/dat/aqs_sites.csv')
+pred_locs <- read.csv('../dat/predlocs.csv')
 
 # dim = 135, 56
 ca <- sqldf('
@@ -54,7 +55,7 @@ county_means <- sqldf('
 pdf('../tex/img/pairsRaw.pdf')
 vars <- cbind(ca$Arithmetic.Mean,
               ca$Lat, ca$Lon, ca$Elevation)
-colnames(vars) <- c('Mean', 'Lat', 'Lon', 'Elevation')
+colnames(vars) <- c('Ozone Mean', 'Latitude', 'Longitude', 'Elevation')
 my.pairs(vars)
 dev.off()
 
@@ -63,7 +64,7 @@ new_vars <- cbind(ca$Arithmetic.Mean,
               ca$Lat,
               ca$Lon,
               log(ca$Elevation))
-colnames(new_vars) <- c('Mean', 'Lat', 'Lon', 'log(Elevation)')
+colnames(new_vars) <- c('Ozone Mean', 'Latitude', 'Longitude', 'log(Elevation)')
 my.pairs(new_vars)
 dev.off()
 
@@ -98,7 +99,7 @@ dev.off()
 set.seed(1)
 source("GP_R/gp.R", chdir=TRUE)
 y <- ca$Arithmetic.Mean * 1000
-X <- cbind(1, new_vars[, c("Lon", "log(Elevation)")])
+X <- cbind(1, new_vars[, c("Longitude", "log(Elevation)")])
 colnames(X) <- c("intercept", "Longitude", "Log Elevation")
 
 pdf('../tex/img/map.pdf')
@@ -169,3 +170,16 @@ abline(a=0, b=1, col='grey30', lty=2)
 legend('bottomright', legend=paste0('Coverage = ', round(coverage,2)),
        bty='n', cex=2, text.col='grey50')
 dev.off()
+
+pdf('../tex/img/resid.pdf')
+map('county', 'california')
+quilt.plot(ca$Lon, ca$Lat, y-pred.mean, add=TRUE)
+dev.off()
+
+
+
+#### KRIG
+#s_new <- sample(1:nrow(pred_locs), 200)
+#X_new <- ???
+#system.time(pred_new <- gp.predict(y,X,s,X_new,s_new,out))
+

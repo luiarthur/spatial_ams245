@@ -60,18 +60,54 @@ include-before:
 ---
 
 \abstract{
-  %\keywords{}
+  The United States Environmental Protection Agency (EPA) monitors the air quality
+  constantly to regulate air quality in the United States. One measurement of air
+  quality is ozone levels. Air quality in any geographical area is spatially correlated,
+  and so are best modeled with spatial models. In addition, Bayesian models provide
+  much modeling flexibility while providing intuitive interpretation of model
+  parameter estimates and predictions.  In this assignment, I will investigate the 
+  covariance structure and trends of ozone levels in the state of California.
+  A Gaussian process with a trend function and matern correlation function are used 
+  in the Bayesian model.
+  \keywords{Gaussian process, matern correlation, MCMC block sampling,
+  auxiliary variables}
 }
 
-# Introduction
+# Introduction to Data
+The data for this analysis consists of the annual summary air data provided by
+the United States Environmental Protection Agency (EPA) from 2015 for the state
+of California. The state had 135 unique monitoring stations with the parameters
+of interest, namely 
 
-# Data
+- `Parameter Name` = "Ozone"
+- `Sample Duration` = "8-HR RUN AVG BEGIN HOUR"
+- `Pollutant Standard` = "Ozone 8-Hour 2008"
+- `Event Type` is one of "No Events", "Concurred Events Excluded", or "Events Excluded", and
+- `Completeness.Indicator` = "Y".
 
+## Exploratory Data Analysis
+A heat map of the average ozone levels in each monitoring location is plotted in
+Figure \ref{map}. One can observe that coastal areas have lower levels of ozone 
+(here and throughout measured in parts per billion), while in-land areas tend
+to have moderate to high levels of ozone. In addition, spatial correlation is
+clearly observed.
 
-# Exploratory Data Analysis
-![Heat map of average ozone levels in California.](img/map.pdf)
-![](img/pairsRaw.pdf)
-![](img/mypairs.pdf)
+![Heat map of average ozone levels in California.](img/map.pdf){id='map'}
+
+In order to more accurately model the spatial correlation, obvious trends
+should first be sought out and removed. Figure \ref{pairsRaw} shows the
+histograms and paired scatter plots of ozone levels, latitude, longitude, and
+elevation. Clearly, linear relationships exist between ozone levels and both
+latitude and longitude.  But the relationship between ozone levels and
+elevation is unclear. Figure \ref{mypairs} shows the same plot after
+log-transforming elevation.  The transformation reveals a linear relationship
+between log elevation and ozone levels
+
+![Histogram and paired scatter plots for ozone level, latitude, longitude, and
+elevation](img/pairsRaw.pdf){id='pairsRaw'}
+
+![Histogram and paired scatter plots for ozone level, latitude, longitude, and
+log elevation](img/mypairs.pdf){id='mypairs'}
 
 # Methods
 
@@ -87,8 +123,10 @@ where $\bm\epsilon \sim \N(\zero,\tau^2 \I)$, $\w \sim \GP(\zero, \sigma^2
 \R(\cdot, \cdot))$, and $\R(\cdot, \cdot)$ is the correlation function. This
 model suggests errors at the observational level and spatial correlation of the
 ozone levels across the state. The design matrix $\X$ is chosen to contain a
-column of ones, longitude, and log elevation. Note that $\sigma^2 \R$ is
-then the covariance function.
+column of ones, longitude, and log elevation. Latitude was not included as
+latitude and longitude are strongly correlated (due to the shape of the state).
+Using only one instead of both of the location values may reduce
+multicollinearity. Note that $\sigma^2 \R$ is then the covariance function.
 
 The matern correlation, governed by range $(\phi)$ and smoothness $(\kappa)$
 parameters, is chosen as the correlation function $(\R)$ for modeling
@@ -119,6 +157,20 @@ Note that when $\tau^2 \sim \IG(a_\tau, b_\tau)$ and
 $\sigma^2 \sim \IG(a_\sigma, b_\sigma)$, the prior distribution for $\gamma^2$
 is $p(\gamma^2) \propto (\gamma^2)^{a_\sigma-1}(\gamma^2 b_\sigma + b_\tau)^{a_\tau +
 a_\sigma}$.
+
+The priors for $\tau^2$ and $\sigma^2$ were chosen to have a prior mean of
+unity and prior infinite variance, to reflect objectivity and great
+uncertainty. The prior for range $\phi$ was chosen to only include values
+between 0 and 2 as those were the plausible range of values in a maximum
+likelihood estimation of the model with vary values for the smoothness
+parameter. Finally, prior mass is only given to value of the smoothness
+$\kappa$ corresponding to 0.5, 1.5, and 2.5 as the interest in estimating
+$\kappa$ lies mainly in the differentiability of the sample paths of the
+Gaussian process. This is an interesting possibility due to the use
+of the matern correlation function.
+
+A reference prior such as that proposed by @berger2001objective can
+also be considered if objective priors are desired.
 
 Note that in the expression for the density of the joint posterior, $\bbeta$
 and $\tau^2$ can be integrated out. Furthermore, the posterior
@@ -202,11 +254,23 @@ the data well, with slight exceptions at the tails of the distribution.
 ![Posterior predictive means (with 95% credible intervals) vs observed ozone
 levels.](img/qq.pdf){id='qq'}
 
+Figure \ref{resid} provides the residuals by location, computed as the posterior
+predictive mean minus the observed ozone level at each location. 
+No obvious trends can be observed in the residuals, indicating good model fit.
+
+![Residuals by locatoin.](img/resid.pdf){id='resid'}
+
 # Conclusions
-DUMMY REFERENCE @berger2001objective
+Modeling ozone levels with a Gaussian process Bayesian model containing a trend
+component and a matern correlation function to model the spatial correlation
+yields promising model fit. Using relatively uninformative priors for model
+parameters and making use of an auxiliary variable to model smoothness
+parameter seem to yield parameter estimates comparable to that of the MLE's.
+Future work would be to include predictions of the ozone levels at new
+locations. This requires information about the new locations' elevation, and so
+was not included in the study.
 
 # References
-
 
 [comment]: <> (%
   These are comments
