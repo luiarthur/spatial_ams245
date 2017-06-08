@@ -2,6 +2,7 @@
 # Lon: x-axis
 
 set.seed(1)
+library(MBA)    # High resolution images
 library(spBayes)
 library(xtable)
 library(rcommon)
@@ -65,7 +66,7 @@ dim(ca)
 X <- cbind(ca$Lon, log(ca$Elevation))
 colnames(X) <- c('Longitude', 'log(Elevation)')
 y <- ca$Arithmetic.Mean
-s <- as.matrix(ca[c('Latitude', 'Longitude')])
+s <- as.matrix(ca[c('Longitude', 'Latitude')])
 n <- nrow(X)
 
 
@@ -162,12 +163,18 @@ par(mfrow=c(1,2))
 map('county', 'california', col='grey')
 quilt.plot(x=u[,"Longitude"], y=u[,"Latitude"],
            z=apply(P_pred$p,1,mean), add=TRUE)
-title(main="Ozone Prediction")
+title(main="PM2.5 Prediction")
 #
 map('county', 'california', col='grey')
 quilt.plot(x=s_ls$P[,"Longitude"], y=s_ls$P[,"Latitude"],
            z=y_ls$P, add=TRUE)
-title(main="Ozone Truth")
+title(main="PM2.5 Truth")
 par(mfrow=c(1,1))
 
+### Higher Resolution
+map('county', 'california', col='transparent')
+xyz_P <- mba.surf(cbind(u, apply(P_pred$p,1,mean)), 1000, 1000)
+image.plot(xyz_P$xyz.est, add=TRUE)
+map('county', 'california', col='grey', add=TRUE)
+title(main="PM2.5 Prediction")
 
