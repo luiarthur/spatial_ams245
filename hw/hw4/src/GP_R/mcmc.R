@@ -81,3 +81,30 @@ ldmvnorm <- function(y, m, S) {
   out <- -(log_det(S) + t(z) %*% solve(S) %*% z) / 2
   out[1,1]
 }
+
+
+### Adaptive MCMC
+# http://www2.warwick.ac.uk/fac/sci/maths/research/miraw/days/montecarlo/abstracts/adaptivemiraw11_roberts.pdf
+
+autotune <- function(x, acc, a, b, i, target=.30, wiggle=.1, 
+                     small=.1, big=10) {
+  acc_too_small <- acc < target - wiggle
+  acc_too_big <- acc > target + wiggle
+
+  new_a <- if (acc_too_small) { 
+    a - 1 / i 
+  } else if (acc_too_big) {
+    a + 1 / i
+  } else a
+
+  x_big <- abs(x) > big
+  x_small <- abs(x) < small
+  new_b <- if (x_big && acc < target) {
+    b - 1 / i
+  } else if (x_small && acc < target) {
+    b + 1 / i
+  } else b
+
+  # returning the new candidate sigma
+  exp(new_a) * (1 + abs(x))^new_b
+}

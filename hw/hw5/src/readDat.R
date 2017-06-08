@@ -62,4 +62,15 @@ ca <- sqldf('
 ')
 dim(ca)
 
-
+pred_locs <- sqldf('
+  SELECT site.Elevation, dat.Longitude, dat.Latitude
+  FROM dat LEFT JOIN site
+  WHERE
+    dat.`State.Name` = "California" AND
+    dat.`State.Name` = site.`State.Name` AND
+    dat.`County.Name` = site.`County.Name` AND
+    dat.`Site.Num` = site.`Site.Number` AND
+    site.Elevation > 10
+  GROUP BY
+    site.Elevation, dat.Longitude, dat.Latitude
+')
