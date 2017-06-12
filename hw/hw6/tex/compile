@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# -s        =>  create standalone file (in this case report.tex latex file)
+# --toc     =>  create table of contents
+# --natbib  =>  use the natbib package in latex
+# -o        =>  output file name
+
+pandoc hw6.md -s -V documentclass:asaproc -o hw6.tex --number-sections
+
+pdflatex hw6.tex
+bibtex hw6.aux
+pdflatex hw6.tex
+pdflatex hw6.tex
+rm -f *.{log,aux,nav,out,snm,toc,blg,bbl}
+rm -f hw6.tex
+
