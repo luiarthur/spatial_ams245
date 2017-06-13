@@ -49,7 +49,7 @@ gp_conv_fit <- function(y, X, u, s,
     ## update v    (metropolis)
     ll_v <- function(log_v) {
       v <- exp(log_v)
-      sum(dnorm(y, X%*%new_beta + kern_sph(D_su,v)%*%new_w, new_tau2, log=TRUE))
+      sum(dnorm(y, X%*%new_beta + kern_sph(D_su,v)%*%new_w, sqrt(new_tau2), log=TRUE))
     }
     lp_v <- function(log_v) lp_log_invgamma(log_v, a_v, b_v)
     new_v <- exp(mh(log(param$v), ll_v, lp_v, cs_v))
@@ -83,7 +83,7 @@ gp_conv_pred <- function(y, X, s, X_new, s_new, u, post) {
   D_sn_u <- as.matrix(dist(rbind(s_new, u)))[1:n_new, -c(1:n_new)]
 
   one_pred <- function(p) {
-    rnorm(n_new, X_new %*% p$b + kern_sph(D_sn_u,p$v) %*% p$w,sqrt(p$tau2))
+    rnorm(n_new, X_new %*% p$b + kern_sph(D_sn_u,p$v) %*% p$w, sqrt(p$tau2))
   }
 
   sapply(post, one_pred)
