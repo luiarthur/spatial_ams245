@@ -112,7 +112,7 @@ autotune <- function(x, acc, a, b, i, target=.30, wiggle=.1,
 post_summary <- function(X, alpha=.05, digits=3) {
   post_mean <- colMeans(X)
   post_sd <- apply(X,2,sd)
-  post_ci <- t(apply(X,2, quantile, c(alpha, 1-alpha/2)))
+  post_ci <- t(apply(X,2, quantile, c(alpha/2, 1-alpha/2)))
 
   post_table <- cbind(post_mean, post_sd, post_ci)
   rownames(post_table) <- colnames(X)

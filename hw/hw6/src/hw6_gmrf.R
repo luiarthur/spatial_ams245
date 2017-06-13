@@ -67,4 +67,10 @@ map('county','california', col='grey', add=T)
 points(u[,1], u[,2], col='grey30', cex=1)
 par(mfrow=c(1,1))
 
+### Residuals ###
+resid_g <- apply(pred2[1:n,], 2, function(c) c-y)
+map('state','california', col='transparent')
+quilt.plot(s[1:n,1], s[1:n,2], rowMeans(resid_g), add=TRUE)
+points(u[,1], u[,2], col='grey30', cex=1)
+map('county','california', col='grey', add=T)
 
