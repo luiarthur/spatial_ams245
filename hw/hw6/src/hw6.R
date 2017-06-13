@@ -71,7 +71,7 @@ m <- nrow(u)
 ### Plot Data & Knots
 map('state','california', col='transparent')
 quilt.plot(s[,1], s[,2], y, add=T)
-points(u[,1], u[,2], pch=4, lwd=2, col='grey30', cex=2)
+points(u[,1], u[,2], col='grey30')
 map('state','california', col='grey', add=T)
 
 source("conv.R", chdir=TRUE)
@@ -97,7 +97,8 @@ plotPosts(v)
 plotPosts(cbind(sig2, tau2, v), acc=F)
 
 source("conv.R", chdir=TRUE)
-post <- cbind(b, w, sig2, tau2, v)
+#post <- cbind(b, w, sig2, tau2, v)
+post <- cbind(b, sig2, tau2, v)
 post_summary(post)
 
 #X_new <- cbind(1, pred_locs[,2], log(pred_locs[,1]))
@@ -130,6 +131,12 @@ quilt.plot(s[,1], s[,2], y, add=T, zlim=zlim)
 #image.plot(xyz_dat$xyz.est, add=TRUE, zlim=zlim)
 points(u[,1], u[,2], col='grey30', cex=1)
 map('county','california', col='grey', add=T)
+
+#map('state','california', col='transparent')
+#xyz <- mba.surf(cbind(s_new, rowMeans(X_new %*% t(b))), 100, 100)
+#image.plot(xyz$xyz.est, add=T, zlim=zlim)
+#map('county','california', col='grey', add=T)
 par(mfrow=c(1,1))
+
 
 
