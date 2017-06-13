@@ -69,3 +69,22 @@ gp_conv_fit <- function(y, X, u, s,
 
   gibbs(INIT, update, B, burn, print_freq)
 }
+
+
+gp_conv_pred <- function(y, X, s, X_new, s_new, u, post) {
+  stopifnot(nrow(X) == nrow(s)) 
+  stopifnot(nrow(X_new) == nrow(s_new)) 
+
+  n <- nrow(X)
+  m <- nrow(u)
+  n_new <- nrow(X_new)
+  #D_all <- as.matrix(dist(rbind(s_new, s, u)))
+  #D_sns_u <- D_all[1:(n+n_new), -c(1:(n+n_new))]
+  D_sn_u <- as.matrix(dist(rbind(s_new, u)))[1:n_new, -c(1:n_new)]
+
+  one_pred <- function(p) {
+    rnorm(n_new, X_new %*% p$b + kern_sph(D_sn_u,p$v) %*% p$w,sqrt(p$tau2))
+  }
+
+  sapply(post, one_pred)
+}

@@ -108,3 +108,15 @@ autotune <- function(x, acc, a, b, i, target=.30, wiggle=.1,
   # returning the new candidate sigma
   exp(new_a) * (1 + abs(x))^new_b
 }
+
+post_summary <- function(X, alpha=.05, digits=3) {
+  post_mean <- colMeans(X)
+  post_sd <- apply(X,2,sd)
+  post_ci <- t(apply(X,2, quantile, c(alpha, 1-alpha/2)))
+
+  post_table <- cbind(post_mean, post_sd, post_ci)
+  rownames(post_table) <- colnames(X)
+  colnames(post_table) <- c("mean","sd","ci.lo","ci.hi")
+
+  round(post_table, digits)
+}
