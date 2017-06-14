@@ -26,7 +26,8 @@ post2 <- cbind(b2, lam, tau2g, v2)
 post_tab2 <- post_summary(post2)
 sink('../tex/img/post2.tex')
 rownames(post_tab2)[4:6] <- c("$\\lambda$","$\\tau^2$","$\\nu$")
-print(xtable(post_tab2, label='post2'),sanitize.text=identity)
+print(xtable(post_tab2),sanitize.text=identity,
+      floating=getOption("xtable.floating",F))
 sink()
 
 system.time(pred2 <- gp_conv_gmrf_pred(y, X, s, X_new, s_new, u, out2))

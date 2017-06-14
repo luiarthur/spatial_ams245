@@ -12,7 +12,7 @@ header-includes:
     - \usepackage{bm}
     - \usepackage{bbm}
     - \usepackage{graphicx}
-    - \pagestyle{empty}
+    - \pagestyle{plain}
     - \newcommand{\norm}[1]{\left\lVert#1\right\rVert}
     - \newcommand{\p}[1]{\left(#1\right)}
     - \newcommand{\bk}[1]{\left[#1\right]}
@@ -153,7 +153,12 @@ n_{ij} & \text { if } i=j \\
 0 & \text {otherwise} 
 \end{cases}
 $$
-and $n_{ij}$ is the number of neighbors of $z_i$.
+and $n_{ij}$ is the number of neighbors of $z_i$. For this analysis, a knots
+neighbors are its **nearest** knots. (i.e., the knots directly north,
+east, south, and west of any given knot.) In theory, by this construction, a
+knot can have at most four neighbors, and at least one neighbor. However, for
+the set of knots chosen in this analysis, each knot had exactly two, three, or
+four neighbor.
 
 The full conditional distribution of $z$ is again a Normal distribution.
 A suitable prior for the precision scale $\lambda$ is a Gamma prior.
@@ -186,36 +191,119 @@ priors for the convolution coefficients, and $\M_2$ be
 the model with the GMRF prior for the convolution coefficients.
 
 ## Posterior of Model Parameters
+Table \ref{post1} summarizes the posterior distribution of parameters in $\M_1$.
+The table reports the posterior means, standard deviations, and 95% credible 
+intervals. All the coefficients appear important (as their credible intervals
+do not contain 0). The intercept is large, which compensates for the longitude
+having large negative values. The coefficient for longitude suggests that
+ignoring the spatial effect of location, for every unit increase in longitude,
+the ozone level average increase is 1.45 (ppb). Likewise, the interpretation of
+the coefficient for log-altitude is ignoring the spatial effect of location,
+for every unit increase in log-altitude, the ozone level average increase is
+2.17 (ppb). Heuristically, (south-)eastern locations and more elevated locations
+have higher ozone levels. This is reasonable as in California, the
+south-eastern locations hotter (which are known to be more prone to higher
+ozone levels) and locations which are higher naturally have higher ozone
+levels. Note that here, $\sigma^2$ is the variance of the convolution
+coefficient $z$, $\tau^2$ is the observational variance, and $\nu$ is the smoothness
+parameter in the spherical Bezier kernel.
 
+\begin{table}[H]
 \input{img/post1.tex}
+\caption{Posterior summary of model parameters in $\M_1$.}
+\label{post1}
+\end{table}
+
+Table \ref{post2} summarizes the posterior distribution of parameters in $\M_2$.
+Note that here, $\lambda$ is the precision scale of the convolution coefficients.
+
+\begin{table}[H]
 \input{img/post2.tex}
+\caption{Posterior summary of model parameters in $\M_2$.}
+\label{post2}
+\end{table}
+
+Table \ref{post} summarizes the differences between common model parameters 
+(i.e. parameters of $\M_1$ - parameters of $\M_2$). It does not make sense
+to compare $\lambda$ to $\sigma^2$, so the two parameters are not compared. 
+Note that the coefficient for log-altitude is significantly different for
+the two models, with that of $\M_1$ being 0.2 units higher in expectation.
+
+\begin{table}[H]
 \input{img/post.tex}
+\caption{Posterior summary of differences between common model parameters (parameters of $\M_1$ - parameters of $\M_2$).}
+\label{post}
+\end{table}
 
-## Posterior Predictive Means
+## Posterior Predictive 
+
+Figure \ref{pred} shows the posterior predictive for both models. As mentioned
+before, there are 807 prediction locations. But for better visualization, the
+plots are smoothed (using the `MBA::mba.surf` function in `R`) to have higher
+resolution. The middle column of plots are simply the data, plotted for convenient
+reference. The top-left panel is the posterior predictive mean under $\M_1$. 
+The panel directly below is the posterior predictive mean under $\M_2$.
+There appear to be no striking differences. The next two panels below (still
+in the first column) are the posterior predictive standard deviations under the
+two models. The similarities are that at the knots where not as many observations
+are available, the uncertainty is higher. Moreover, at the top-left corner of 
+the maps, the uncertainty under $\M_2$ is higher than that of $\M_2$. This is
+likely due to the structure of the precision matrix in $\M_2$, which only
+permits correlation with neighbors.
+
+The panels on the right in Figure \ref{pred} display the posterior distributions
+of the system mean $X^*\beta$ for both models. In that column, the first two plots
+show the expectation. Notably, the surface for $\M_2$ has fewer red patches. This
+is likely due to the model absorbing more of the variability due to altitude
+into the spatial modeling. (This is possibly associated with the difference in the
+estimates for the coefficient for log-altitude.) The next two panels show the
+posterior standard deviations. Once again, the uncertainty is greater at the 
+corners of the maps, with $\M_2$ having greater variance overall, but especially
+in the corners.
 
 \begin{figure*}
   \centering
-  \includegraphics[width=.9\textwidth]{img/pred.pdf}
-  \caption{}
-  \label{fig:pred}
+  \includegraphics[width=.8\textwidth]{img/pred.pdf}
+  \caption{Posterior predictive mean and standard deviations. Middle column is 
+  the data (for reference).
+  }
+  \label{pred}
 \end{figure*}
 
-## Posterior Predictive Variance
-\begin{figure*}
-  \centering
-  \includegraphics[width=.9\textwidth]{img/predvar.pdf}
-  \caption{}
-  \label{fig:predvar}
-\end{figure*}
-
+To summarize, the posterior predictive mean surfaces under the two models are
+similar, with the only difference being the uncertainty at the corners of
+the maps. $\M_2$ has greater uncertainty at the corners.
 
 ## Residual Analysis
+Figure \ref{resid} shows the posterior mean of the residuals under the two models.
+Visually, the residuals seem to have the same patterns. At some locations where
+the ozone levels are unusually high or low, the residuals are larger in magnitude.
+Suggesting either that the models are not capturing the tails of the behavior
+at the tails of the distribution, or the extreme observations are outliers.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=.4\textwidth]{img/resid.pdf}
+  \caption{Posterior mean of residuals.}
+  \label{resid}
+\end{figure}
+
 The posterior probability of the residuals of $\M_1$ being greater that of
 $\M_2$ is \input{img/postResidProb.tex}. That is, $\M_1$ (iid Normal priors for
 convolution weights) may have better fit.
 
 # Conclusions
-
+Fitting convolution processes to model the data can take less computation time
+than Gaussian processes. In this analysis, two convolution process models
+are explored. One with iid Normal priors for the convolution coefficients, and 
+another with a GMRF prior. The model parameters are mostly similar, with the
+exception of the coefficient related to altitude. The posterior predictive mean
+surfaces under both models appear to be very similar, with the only notable
+difference being that the uncertainty at the corners (boundaries) of the map
+are higher for the GMRF model. A residual analysis reveals that the residuals
+of $\M_2$ (GMRF prior) are higher than that of $\M_1$ (iid Normal priors). This
+suggests that the simpler model with Gaussian priors for the convolution
+coefficients may have better model fit, while being more parsimonious. 
 
 [comment]: <> (%
 For figures and tables to stretch across two columns

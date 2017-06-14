@@ -26,7 +26,8 @@ post <- cbind(b, sig2, tau2, v)
 post_tab1 <- post_summary(post)
 sink('../tex/img/post1.tex')
 rownames(post_tab1)[4:6] <- c("$\\sigma^2$","$\\tau^2$","$\\nu$")
-print(xtable(post_tab1, label='post1'),sanitize.text=identity)
+print(xtable(post_tab1),sanitize.text=identity,
+      floating=getOption("xtable.floating",F))
 sink()
 
 
