@@ -66,10 +66,12 @@ m <- nrow(u)
 
 
 ### Plot Data & Knots
+pdf('../tex/img/data.pdf')
 map('state','california', col='transparent')
 quilt.plot(s[,1], s[,2], y, add=T)
 points(u[,1], u[,2], col='grey30')
 map('state','california', col='grey', add=T)
+dev.off()
 
 ### New Prediction Locations
 X_new <- cbind(1, pred_locs[,2], log(pred_locs[,1]))

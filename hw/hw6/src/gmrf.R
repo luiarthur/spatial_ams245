@@ -28,12 +28,11 @@ genW <- function(D, eps=1E-4) {
 gp_conv_gmrf_fit <- function(y, X, u, s,
                              B, burn, print_freq=0,
                              init=list(NULL), 
-                             a_lamy=.01, b_lamy=.01,
+                             a_tau=2, b_tau=1,
                              a_lamz=.01, b_lamz=.01,
                              a_v=2, b_v=1, cs_v=1,
-                             delta=1e-3, eps=1e-4) {
+                             eps=1e-4) {
 
-  #' @param delta: small amount to add to diagona
   #' @param eps: parameter in genW(D)
 
   stopifnot(ncol(u) == ncol(s))
@@ -44,7 +43,7 @@ gp_conv_gmrf_fit <- function(y, X, u, s,
   D_all <- as.matrix(dist(su))
   D_su <- D_all[1:n, -c(1:n)]
   D_u <- D_all[-c(1:n), -c(1:n)]
-  W <- genW(D_u, eps) + diag(delta, m)
+  W <- genW(D_u, eps)
   XXi <- solve(t(X) %*% X)
 
   I_n <- diag(n)
@@ -55,30 +54,30 @@ gp_conv_gmrf_fit <- function(y, X, u, s,
     ## update beta (conj)
     K <- kern_sph(D_su, param$v)
     m_beta <- XXi %*% t(X) %*% (y - K %*% param$z)
-    new_beta <- mvrnorm(m_beta, XXi / param$lamy)
+    new_beta <- mvrnorm(m_beta, XXi * param$tau2)
 
     ## update z    (conj)
-    V_z <- solve(param$lamy*(t(K) %*% K) + W*param$lamz)
-    m_z <- param$lamy * V_z %*% t(K) %*% (y - X %*% new_beta)
+    V_z <- solve((t(K) %*% K)/param$tau2 + W*param$lamz)
+    m_z <- V_z %*% t(K) %*% (y - X %*% new_beta) / param$tau2
     new_z <- mvrnorm(m_z, V_z)
 
     ## update lamz (conj)
     new_lamz <- rgamma(1, a_lamz + m/2, b_lamz + t(new_z)%*% W %*% new_z/2)
 
-    ## update lamy (conj)
+    ## update tau2 (conj)
     resid <- y - X %*% new_beta - K %*% new_z
-    new_lamy <- rgamma(1, a_lamy + n/2, b_lamy + sum(resid^2)/2)
+    new_tau2 <- 1 / rgamma(1, a_tau + n/2, b_tau + sum(resid^2)/2)
 
     ## update v    (metropolis)
     ll_v <- function(log_v) {
       v <- exp(log_v)
-      sum(dnorm(y, X%*%new_beta + kern_sph(D_su,v)%*%new_z, sqrt(1/new_lamy), log=TRUE))
+      sum(dnorm(y, X%*%new_beta + kern_sph(D_su,v)%*%new_z, sqrt(new_tau2), log=TRUE))
     }
     lp_v <- function(log_v) lp_log_invgamma(log_v, a_v, b_v)
     new_v <- exp(mh(log(param$v), ll_v, lp_v, cs_v))
 
     new_state <- list(beta=new_beta, z=new_z, v=new_v,
-                      lamy=new_lamy, lamz=new_lamz)
+                      tau2=new_tau2, lamz=new_lamz)
     new_state
   }
 
@@ -86,7 +85,7 @@ gp_conv_gmrf_fit <- function(y, X, u, s,
     list(beta=rep(0,p),
          z=rep(0,m),
          v=b_v / (a_v-1),
-         lamy=a_lamy / b_lamy,
+         tau2=b_tau / (a_tau-1),
          lamz=a_lamz / b_lamz)
   } else init
 
@@ -106,7 +105,7 @@ gp_conv_gmrf_pred <- function(y, X, s, X_new, s_new, u, post) {
   D_sn_u <- as.matrix(dist(rbind(s_new, u)))[1:n_new, -c(1:n_new)]
 
   one_pred <- function(p) {
-    rnorm(n_new, X_new %*% p$b + kern_sph(D_sn_u,p$v) %*% p$z, sqrt(1/p$lamy))
+    rnorm(n_new, X_new %*% p$b + kern_sph(D_sn_u,p$v) %*% p$z, sqrt(p$tau2))
   }
 
   sapply(post, one_pred)

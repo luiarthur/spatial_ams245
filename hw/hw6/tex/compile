@@ -12,5 +12,5 @@ bibtex hw6.aux
 pdflatex hw6.tex
 pdflatex hw6.tex
 rm -f *.{log,aux,nav,out,snm,toc,blg,bbl}
-rm -f hw6.tex
+#rm -f hw6.tex
 

@@ -116,7 +116,7 @@ post_summary <- function(X, alpha=.05, digits=3) {
 
   post_table <- cbind(post_mean, post_sd, post_ci)
   rownames(post_table) <- colnames(X)
-  colnames(post_table) <- c("mean","sd","ci.lo","ci.hi")
+  colnames(post_table) <- c("Mean","SD","CI.lower","CI.upper")
 
   round(post_table, digits)
 }

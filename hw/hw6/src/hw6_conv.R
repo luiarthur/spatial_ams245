@@ -23,7 +23,11 @@ plotPosts(cbind(sig2, tau2, v), acc=F)
 
 #post <- cbind(b, w, sig2, tau2, v)
 post <- cbind(b, sig2, tau2, v)
-post_summary(post)
+post_tab1 <- post_summary(post)
+sink('../tex/img/post1.tex')
+rownames(post_tab1)[4:6] <- c("$\\sigma^2$","$\\tau^2$","$\\nu$")
+print(xtable(post_tab1, label='post1'),sanitize.text=identity)
+sink()
 
 
 system.time(pred <- gp_conv_pred(y, X, s, X_new, s_new, u, out))
@@ -67,6 +71,31 @@ image.plot(xyz$xyz.est, add=T, zlim=zlim)
 map('county','california', col='grey', add=T)
 points(u[,1], u[,2], col='grey30', cex=1)
 par(mfrow=c(1,1))
+
+### Predictive Variance
+zlim_sd1 <- c(3,6)
+zlim_sd2 <- c(.5,3)
+pred_sd <- apply(pred, 1, sd)
+par(mfrow=c(1,3))
+map('state','california', col='transparent')
+xyz <- mba.surf(cbind(s_new, pred_sd), 100, 100)
+image.plot(xyz$xyz.est, add=TRUE, zlim=zlim_sd1)
+points(u[,1], u[,2], col='grey30', cex=1)
+map('county','california', col='grey', add=T)
+
+map('state','california', col='transparent')
+quilt.plot(s[,1], s[,2], y, add=TRUE, zlim=zlim)
+points(u[,1], u[,2], col='grey30', cex=1)
+map('county','california', col='grey', add=T)
+
+map('state','california', col='transparent')
+xyz <- mba.surf(cbind(s_new, apply(X_new %*% t(b), 1, sd)), 100, 100)
+image.plot(xyz$xyz.est, add=T, zlim=zlim_sd2)
+map('county','california', col='grey', add=T)
+points(u[,1], u[,2], col='grey30', cex=1)
+par(mfrow=c(1,1))
+
+
 
 ### Residuals ###
 resid_c <- apply(pred[1:n,], 2, function(c) c-y)
