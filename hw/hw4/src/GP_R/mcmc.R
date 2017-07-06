@@ -120,3 +120,33 @@ post_summary <- function(X, alpha=.05, digits=3) {
 
   round(post_table, digits)
 }
+
+# For 1-D param.
+# See Haario et al., 2001
+# and Gelman et al., 1996
+autotune2 <- function(x, s_mult = 2.4) {
+  s_mult * sqrt(var(x) + 1E-6)
+}
+
+### Gibbs Sampler (autotune) ###
+gibbs_auto <- function(init, update, B, burn, adapt=NULL, print_every=0) {
+  out <- as.list(1:(B+burn))
+  out[[1]] <- init
+
+  for (i in 2:(B+burn)) {
+
+    out[[i]] <- update(out[[i-1]], cs)
+
+    # DO Adaptive MCMC
+    if (!is.null(adapt)) {
+      if (i %% 100 == 0) cs <- adapt(out[(i-99):i])
+    }
+
+    if (print_every > 0 && i %% print_every == 0) {
+      cat("\rProgress: ", i, " / ", B+burn)
+    }
+  }
+  cat("\n")
+
+  tail(out, B)
+}
